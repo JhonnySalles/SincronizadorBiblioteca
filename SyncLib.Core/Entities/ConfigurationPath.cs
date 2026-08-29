@@ -10,4 +10,5 @@ public class ConfigurationPath
     public MediaType MediaType { get; set; }
     public bool IncludesSubfolders { get; set; }
     public string Description { get; set; } = string.Empty;
+    public string CustomSuffix { get; set; } = string.Empty;
 }

@@ -22,6 +22,12 @@ public partial class FileItemModel : ObservableObject
     private string _seriesFolderName = string.Empty;
 
     [ObservableProperty]
+    private string _originalRawSeries = string.Empty;
+
+    [ObservableProperty]
+    private string _originalAutoFileName = string.Empty;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayTargetDirectory))]
     private bool _isCustomTarget;
 
@@ -43,6 +49,18 @@ public partial class FileItemModel : ObservableObject
 
     [ObservableProperty]
     private int? _volumeNumber;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusDotColor))]
+    [NotifyPropertyChangedFor(nameof(FolderButtonVisibility))]
+    private bool _isCopied;
+
+    [ObservableProperty]
+    private string _copiedFilePath = string.Empty;
+
+    public string StatusDotColor => IsCopied ? "#22C55E" : "#888888";
+
+    public Microsoft.UI.Xaml.Visibility FolderButtonVisibility => IsCopied ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public string DisplayTargetDirectory
     {

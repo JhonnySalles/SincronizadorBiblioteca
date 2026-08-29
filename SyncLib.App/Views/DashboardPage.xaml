@@ -16,6 +16,8 @@
     <Page.Resources>
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
         <converters:StringToBrushConverter x:Key="StringToBrushConverter" />
+        <converters:RowColorToActionIconBrushConverter x:Key="RowColorToActionIconBrushConverter" />
+        <converters:RowColorToFolderIconBrushConverter x:Key="RowColorToFolderIconBrushConverter" />
     </Page.Resources>
 
     <Grid Padding="32" RowSpacing="20">
@@ -155,6 +157,21 @@
                         </Style>
                     </controls:DataGrid.ColumnHeaderStyle>
                     <controls:DataGrid.Columns>
+                        <!-- Coluna 0: Status da Cópia (Bolinha) -->
+                        <controls:DataGridTemplateColumn Width="40" MinWidth="35">
+                            <controls:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="models:FileItemModel">
+                                    <Border Background="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}"
+                                            Padding="4">
+                                        <Ellipse Width="10" Height="10" 
+                                                 Fill="{x:Bind StatusDotColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}" 
+                                                 HorizontalAlignment="Center" 
+                                                 VerticalAlignment="Center"/>
+                                    </Border>
+                                </DataTemplate>
+                            </controls:DataGridTemplateColumn.CellTemplate>
+                        </controls:DataGridTemplateColumn>
+
                         <!-- Coluna 1: Arquivo de Origem -->
                         <controls:DataGridTemplateColumn Header="Arquivo de Origem" Width="250" MinWidth="180" CanUserSort="True">
                             <controls:DataGridTemplateColumn.CellTemplate>
@@ -169,7 +186,7 @@
                         </controls:DataGridTemplateColumn>
 
                         <!-- Coluna 2: Nome Final no Destino (Editável) -->
-                        <controls:DataGridTemplateColumn Header="Nome Final no Destino" Width="300" MinWidth="220">
+                        <controls:DataGridTemplateColumn Header="Nome Final no Destino" Width="450" MinWidth="330">
                             <controls:DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate x:DataType="models:FileItemModel">
                                     <Border Background="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}"
@@ -184,7 +201,7 @@
                         </controls:DataGridTemplateColumn>
 
                         <!-- Coluna 3: Pasta de Destino (Editável + Picker) -->
-                        <controls:DataGridTemplateColumn Header="Pasta de Destino" Width="280" MinWidth="180" CanUserSort="True">
+                        <controls:DataGridTemplateColumn Header="Pasta de Destino" Width="560" MinWidth="360" CanUserSort="True">
                             <controls:DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate x:DataType="models:FileItemModel">
                                     <Border Background="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}"
@@ -200,8 +217,7 @@
                                                      VerticalAlignment="Center" 
                                                      FontSize="13"/>
                                             <Button Grid.Column="1"
-                                                    Command="{Binding DataContext.SelectCustomFolderCommand, ElementName=DashboardPageRoot}"
-                                                    CommandParameter="{x:Bind}"
+                                                    Click="SelectCustomFolder_Click"
                                                     Style="{ThemeResource SubtleButtonStyle}"
                                                     Padding="4"
                                                     VerticalAlignment="Center"
@@ -214,31 +230,46 @@
                             </controls:DataGridTemplateColumn.CellTemplate>
                         </controls:DataGridTemplateColumn>
 
-                        <!-- Coluna 4: Tipo -->
-                        <controls:DataGridTemplateColumn Header="Tipo" Width="150" MinWidth="100">
+                        <!-- Coluna 4: Informações -->
+                        <controls:DataGridTemplateColumn Header="Informações" Width="*" MinWidth="220">
                             <controls:DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate x:DataType="models:FileItemModel">
                                     <Border Background="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}"
-                                            ToolTipService.ToolTip="{x:Bind StatusTooltip, Mode=OneWay}"
                                             Padding="12,6">
-                                        <TextBlock Text="{x:Bind MediaTypeDisplayName}" VerticalAlignment="Center" Foreground="{ThemeResource SystemAccentColor}"/>
+                                        <TextBlock Text="{x:Bind StatusTooltip, Mode=OneWay}" 
+                                                   VerticalAlignment="Center" 
+                                                   FontSize="12" 
+                                                   TextWrapping="Wrap" 
+                                                   TextTrimming="CharacterEllipsis"/>
                                     </Border>
                                 </DataTemplate>
                             </controls:DataGridTemplateColumn.CellTemplate>
                         </controls:DataGridTemplateColumn>
 
                         <!-- Coluna 5: Ações -->
-                        <controls:DataGridTemplateColumn Header="Ações" Width="70" MinWidth="60">
+                        <controls:DataGridTemplateColumn Header="Ações" Width="110" MinWidth="90">
                             <controls:DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate x:DataType="models:FileItemModel">
                                     <Border Background="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}"
                                             Padding="4">
-                                        <Button HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                Command="{Binding DataContext.RemovePendingFileCommand, ElementName=DashboardPageRoot}"
-                                                CommandParameter="{x:Bind}"
-                                                Style="{ThemeResource SubtleButtonStyle}">
-                                            <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="#EF4444"/>
-                                        </Button>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                                            <!-- Botão Excluir da Fila -->
+                                            <Button Click="RemoveFile_Click"
+                                                    Style="{ThemeResource SubtleButtonStyle}"
+                                                    Padding="4"
+                                                    ToolTipService.ToolTip="Remover da fila">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource RowColorToActionIconBrushConverter}}"/>
+                                            </Button>
+
+                                            <!-- Botão Abrir Pasta (Visível somente após a cópia) -->
+                                            <Button Click="OpenFolder_Click"
+                                                    Visibility="{x:Bind FolderButtonVisibility, Mode=OneWay}"
+                                                    Style="{ThemeResource SubtleButtonStyle}"
+                                                    Padding="4"
+                                                    ToolTipService.ToolTip="Abrir pasta no Windows Explorer">
+                                                <FontIcon Glyph="&#xE8B7;" FontSize="14" Foreground="{x:Bind RowColor, Mode=OneWay, Converter={StaticResource RowColorToFolderIconBrushConverter}}"/>
+                                            </Button>
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </controls:DataGridTemplateColumn.CellTemplate>
@@ -250,24 +281,30 @@
             <!-- Dica Visual de Drag & Drop quando a lista estiver vazia -->
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsHitTestVisible="False"
                         Visibility="{x:Bind ViewModel.PendingFiles.Count, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}">
-                <FontIcon Glyph="&#xC19C;" FontSize="36" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                <FontIcon Glyph="&#xE898;" FontSize="36" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                 <TextBlock Text="Arraste e solte os arquivos aqui para adicionar à fila" 
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" 
                            FontWeight="Medium"/>
             </StackPanel>
         </Grid>
 
-        <!-- 5. Rodapé / Status + Botão Copiar -->
+        <!-- 5. Rodapé / Status + Barra de Progresso + Botões -->
         <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
-                       VerticalAlignment="Center" 
-                       Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" 
-                       Grid.Column="0"/>
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
+                <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
+                           Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" />
+                <ProgressBar Minimum="0" 
+                             Maximum="{x:Bind ViewModel.CopyTotal, Mode=OneWay}" 
+                             Value="{x:Bind ViewModel.CopyProgress, Mode=OneWay}" 
+                             Visibility="{x:Bind ViewModel.IsCopying, Mode=OneWay}" 
+                             Height="4" 
+                             HorizontalAlignment="Stretch"/>
+            </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
                 <Button Content="Limpar Fila" 

@@ -76,4 +76,48 @@ public sealed partial class DashboardPage : Page
             ViewModel.AddFiles(paths);
         }
     }
+
+    private async void SelectCustomFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is SyncLib.App.Models.FileItemModel item)
+        {
+            var picker = new FolderPicker();
+            picker.SuggestedStartLocation = PickerLocationId.Desktop;
+            picker.FileTypeFilter.Add("*");
+
+            var window = (Application.Current as SyncLib_App.App)?.MainWindow;
+            if (window != null)
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            }
+
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                item.IsCustomTarget = true;
+                item.TargetDirectory = folder.Path;
+                item.RowColor = "Transparent";
+                item.StatusTooltip = $"Pasta personalizada selecionada: {folder.Path}";
+
+                ViewModel.UpdateDirectoryCache(item.SeriesFolderName, folder.Path);
+            }
+        }
+    }
+
+    private void RemoveFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is SyncLib.App.Models.FileItemModel item)
+        {
+            ViewModel.RemovePendingFileCommand.Execute(item);
+        }
+    }
+
+    private void OpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is SyncLib.App.Models.FileItemModel item)
+        {
+            ViewModel.OpenCopiedFolderCommand.Execute(item);
+        }
+    }
 }

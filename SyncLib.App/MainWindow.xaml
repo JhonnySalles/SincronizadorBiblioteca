@@ -20,11 +20,11 @@
 
         <TitleBar x:Name="AppTitleBar" Title="SyncLib">
             <TitleBar.IconSource>
-                <ImageIconSource ImageSource="Assets/AppIcon.ico" />
+                <ImageIconSource ImageSource="Assets/WindowIcon.png" />
             </TitleBar.IconSource>
         </TitleBar>
 
-        <NavigationView x:Name="NavView" Grid.Row="1" IsBackButtonVisible="Collapsed" ItemInvoked="NavView_ItemInvoked" Loaded="NavView_Loaded">
+        <NavigationView x:Name="NavView" Grid.Row="1" IsBackButtonVisible="Collapsed" ItemInvoked="NavView_ItemInvoked" Loaded="NavView_Loaded" PaneOpened="NavView_PaneOpened" PaneClosed="NavView_PaneClosed">
             <NavigationView.MenuItems>
                 <NavigationViewItem Icon="Home" Content="Geral" Tag="DashboardPage" />
             </NavigationView.MenuItems>

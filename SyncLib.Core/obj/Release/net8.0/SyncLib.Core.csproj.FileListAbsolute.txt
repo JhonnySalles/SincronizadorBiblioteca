@@ -9,3 +9,4 @@ F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\SyncLib.Core
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\refint\SyncLib.Core.dll
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\SyncLib.Core.pdb
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\ref\SyncLib.Core.dll
+f:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\SyncLib.Core.sourcelink.json

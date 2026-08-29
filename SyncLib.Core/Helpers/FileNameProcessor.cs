@@ -1,12 +1,16 @@
+using SyncLib.Core.Entities;
 using SyncLib.Core.Enums;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SyncLib.Core.Helpers;
 
 public class ProcessedFileNameResult
 {
+    public string OriginalRawSeries { get; set; } = string.Empty;
     public string SeriesName { get; set; } = string.Empty;
     public int? VolumeNumber { get; set; }
     public string FormattedFileName { get; set; } = string.Empty;
@@ -14,7 +18,7 @@ public class ProcessedFileNameResult
 
 public static class FileNameProcessor
 {
-    public static ProcessedFileNameResult Process(string originalFileName, MediaType mediaType)
+    public static ProcessedFileNameResult Process(string originalFileName, MediaType mediaType, IEnumerable<NamingPattern>? savedPatterns = null, string? customSuffix = null)
     {
         string extension = Path.GetExtension(originalFileName);
         string nameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
@@ -27,7 +31,7 @@ public static class FileNameProcessor
 
         if (match.Success)
         {
-            seriesRaw = match.Groups["series"].Value;
+            seriesRaw = match.Groups["series"].Value.Trim();
             if (int.TryParse(match.Groups["vol"].Value, out int v))
             {
                 volumeNumber = v;
@@ -35,13 +39,9 @@ public static class FileNameProcessor
         }
         else
         {
-            seriesRaw = nameWithoutExt;
+            seriesRaw = nameWithoutExt.Trim();
         }
 
-        // Regras de substituição no nome da série:
-        // 1. Underline '_' trocado por ' - '
-        // 2. Vírgula ',' removida
-        // 3. Limpeza de múltiplos espaços
         string cleanedSeries = seriesRaw
             .Replace("_", " - ")
             .Replace(",", "");
@@ -49,30 +49,82 @@ public static class FileNameProcessor
         cleanedSeries = Regex.Replace(cleanedSeries, @"\s+", " ").Trim();
         cleanedSeries = Regex.Replace(cleanedSeries, @"\s*-\s*", " - ").Trim(' ', '-');
 
-        // Sufixo de idioma
-        string langSuffix = mediaType switch
+        string suffixPart = !string.IsNullOrWhiteSpace(customSuffix) ? $" {customSuffix.Trim()}" : string.Empty;
+
+        // Verifica se há um padrão salvo para esta série original
+        NamingPattern? pattern = null;
+        if (savedPatterns != null)
         {
-            MediaType.MangaIngles or MediaType.EbookIngles => " (Eng)",
-            MediaType.MangaJapones or MediaType.EbookJapones => " (Jap)",
-            _ => string.Empty
-        };
+            string normRaw = Normalize(seriesRaw);
+            string normClean = Normalize(cleanedSeries);
+
+            pattern = savedPatterns.FirstOrDefault(p =>
+                Normalize(p.OriginalRawSeries) == normRaw ||
+                Normalize(p.OriginalRawSeries) == normClean);
+        }
 
         string finalName;
-        if (volumeNumber.HasValue)
+        string finalSeriesName = cleanedSeries;
+
+        if (pattern != null && !string.IsNullOrWhiteSpace(pattern.CustomTemplate))
         {
-            string formattedVol = volumeNumber.Value.ToString("D2");
-            finalName = $"{cleanedSeries} - Volume {formattedVol}{langSuffix}{extension}";
+            finalName = ApplyTemplate(pattern.CustomTemplate, volumeNumber, suffixPart, extension);
+            finalSeriesName = ExtractSeriesFromFormatted(finalName, volumeNumber, extension, suffixPart);
         }
         else
         {
-            finalName = $"{cleanedSeries}{langSuffix}{extension}";
+            if (volumeNumber.HasValue)
+            {
+                string formattedVol = volumeNumber.Value.ToString("D2");
+                finalName = $"{cleanedSeries} - Volume {formattedVol}{suffixPart}{extension}";
+            }
+            else
+            {
+                finalName = $"{cleanedSeries}{suffixPart}{extension}";
+            }
         }
 
         return new ProcessedFileNameResult
         {
-            SeriesName = cleanedSeries,
+            OriginalRawSeries = seriesRaw,
+            SeriesName = finalSeriesName,
             VolumeNumber = volumeNumber,
             FormattedFileName = finalName
         };
+    }
+
+    public static string ApplyTemplate(string template, int? volumeNumber, string customSuffixPart, string extension)
+    {
+        string result = template;
+        if (volumeNumber.HasValue)
+        {
+            result = result.Replace("{Volume:D2}", volumeNumber.Value.ToString("D2"));
+            result = result.Replace("{Volume}", volumeNumber.Value.ToString());
+        }
+        result = result.Replace("{LangSuffix}", customSuffixPart);
+        result = result.Replace("{Extension}", extension);
+        return result;
+    }
+
+    private static string ExtractSeriesFromFormatted(string formattedFileName, int? volumeNumber, string extension, string customSuffixPart)
+    {
+        string name = Path.GetFileNameWithoutExtension(formattedFileName);
+        if (!string.IsNullOrEmpty(customSuffixPart) && name.EndsWith(customSuffixPart, StringComparison.OrdinalIgnoreCase))
+        {
+            name = name.Substring(0, name.Length - customSuffixPart.Length);
+        }
+
+        var match = Regex.Match(name, @"^(?<series>.+?)\s*(?:-\s*|[Vv]ol(?:ume)?\.?\s*)\d+", RegexOptions.IgnoreCase);
+        if (match.Success)
+        {
+            return match.Groups["series"].Value.Trim(' ', '-');
+        }
+
+        return name.Trim();
+    }
+
+    private static string Normalize(string input)
+    {
+        return Regex.Replace(input, @"[\s,_\-]", "").ToLowerInvariant();
     }
 }

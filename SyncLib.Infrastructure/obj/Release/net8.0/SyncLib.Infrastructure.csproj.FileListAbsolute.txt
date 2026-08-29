@@ -15,3 +15,4 @@ F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\re
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\SyncLib.Infrastructure.pdb
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\SyncLib.Infrastructure.genruntimeconfig.cache
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\ref\SyncLib.Infrastructure.dll
+f:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\SyncLib.Infrastructure.sourcelink.json

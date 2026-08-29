@@ -52,10 +52,11 @@
                               Grid.Column="1"/>
                 </Grid>
 
-                <!-- Linha 2: Descrição, Sub-pastas e Botão Inserir -->
+                <!-- Linha 2: Descrição, Sufixo, Sub-pastas e Botão Inserir -->
                 <Grid ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="140" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -65,16 +66,21 @@
                              PlaceholderText="Ex: Coleção principal de Mangás"
                              Grid.Column="0"/>
 
+                    <TextBox Header="Prefixo / Sufixo" 
+                             Text="{x:Bind ViewModel.InputCustomSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="Ex: (Eng)"
+                             Grid.Column="1"/>
+
                     <CheckBox Content="Sub-pastas" 
                               IsChecked="{x:Bind ViewModel.InputIncludesSubfolders, Mode=TwoWay}"
-                              Grid.Column="1" 
+                              Grid.Column="2" 
                               VerticalAlignment="Bottom" 
                               Margin="0,0,0,6"/>
 
                     <Button Content="Inserir Caminho" 
                             Command="{x:Bind ViewModel.AddPathCommand}"
                             Style="{ThemeResource AccentButtonStyle}" 
-                            Grid.Column="2" 
+                            Grid.Column="3" 
                             VerticalAlignment="Bottom" 
                             Height="36"/>
                 </Grid>
@@ -91,8 +97,9 @@
             <!-- Cabeçalhos de Coluna -->
             <Grid Grid.Row="0" Margin="16,0,16,0">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150" />
                     <ColumnDefinition Width="160" />
-                    <ColumnDefinition Width="180" />
+                    <ColumnDefinition Width="110" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="90" />
                     <ColumnDefinition Width="90" />
@@ -100,10 +107,11 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Tipo" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="0"/>
                 <TextBlock Text="Descrição" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="1"/>
-                <TextBlock Text="Caminho" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="2"/>
-                <TextBlock Text="Sub-pastas" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" HorizontalAlignment="Center" Grid.Column="3"/>
-                <TextBlock Text="Status" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="4"/>
-                <TextBlock Text="Ações" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" HorizontalAlignment="Center" Grid.Column="5"/>
+                <TextBlock Text="Prefixo/Sufixo" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="2"/>
+                <TextBlock Text="Caminho" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="3"/>
+                <TextBlock Text="Sub-pastas" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" HorizontalAlignment="Center" Grid.Column="4"/>
+                <TextBlock Text="Status" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="5"/>
+                <TextBlock Text="Ações" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" HorizontalAlignment="Center" Grid.Column="6"/>
             </Grid>
 
             <!-- Tabela ListView -->
@@ -113,8 +121,9 @@
                         <DataTemplate x:DataType="models:PathDisplayModel">
                             <Grid Padding="4,8" ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
                                     <ColumnDefinition Width="160" />
-                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="110" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="90" />
                                     <ColumnDefinition Width="90" />
@@ -123,17 +132,18 @@
 
                                 <TextBlock Text="{x:Bind MediaTypeDisplayName}" VerticalAlignment="Center" FontWeight="Medium" Grid.Column="0"/>
                                 <TextBlock Text="{x:Bind Description}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Grid.Column="1"/>
-                                <TextBlock Text="{x:Bind Path}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="2"/>
+                                <TextBlock Text="{x:Bind CustomSuffix}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Grid.Column="2"/>
+                                <TextBlock Text="{x:Bind Path}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="3"/>
                                 
-                                <TextBlock Text="{x:Bind SubfoldersText}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Grid.Column="3"/>
+                                <TextBlock Text="{x:Bind SubfoldersText}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Grid.Column="4"/>
 
                                 <!-- Badge de Status -->
-                                <Border Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="12" Padding="8,2" Background="{x:Bind StatusColor, Converter={StaticResource StringToBrushConverter}}">
+                                <Border Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="12" Padding="8,2" Background="{x:Bind StatusColor, Converter={StaticResource StringToBrushConverter}}">
                                     <TextBlock Text="{x:Bind StatusText}" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
                                 </Border>
 
                                 <!-- Botão Excluir -->
-                                <Button Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                <Button Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Command="{Binding DataContext.DeletePathCommand, ElementName=SettingsPageRoot}"
                                         CommandParameter="{x:Bind}"
                                         Style="{ThemeResource SubtleButtonStyle}">

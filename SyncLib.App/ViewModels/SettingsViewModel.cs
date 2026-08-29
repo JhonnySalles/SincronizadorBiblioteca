@@ -22,6 +22,9 @@ public partial class SettingsViewModel : ObservableObject
     private string _inputDescription = string.Empty;
 
     [ObservableProperty]
+    private string _inputCustomSuffix = string.Empty;
+
+    [ObservableProperty]
     private bool _inputIncludesSubfolders;
 
     [ObservableProperty]
@@ -94,6 +97,7 @@ public partial class SettingsViewModel : ObservableObject
             Path = InputPath.Trim(),
             MediaType = SelectedMediaTypeOption.Type,
             Description = InputDescription.Trim(),
+            CustomSuffix = InputCustomSuffix.Trim(),
             IncludesSubfolders = InputIncludesSubfolders
         };
         model.CheckStatus();
@@ -103,6 +107,7 @@ public partial class SettingsViewModel : ObservableObject
         // Resetar inputs
         InputPath = string.Empty;
         InputDescription = string.Empty;
+        InputCustomSuffix = string.Empty;
         InputIncludesSubfolders = false;
 
         StatusMessage = "Caminho inserido na lista (clique em Salvar para persistir no banco).";
@@ -137,12 +142,13 @@ public partial class SettingsViewModel : ObservableObject
                     Path = model.Path,
                     MediaType = model.MediaType,
                     Description = model.Description,
+                    CustomSuffix = model.CustomSuffix,
                     IncludesSubfolders = model.IncludesSubfolders
                 });
             }
 
             await db.SaveChangesAsync();
-            StatusMessage = "Configurações salvas com sucesso (via Migrations)!";
+            StatusMessage = "Configurações salvas com sucesso!";
         }
         catch (Exception ex)
         {

@@ -54,7 +54,142 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private string _statusMessage = string.Empty;
 
+    [ObservableProperty]
+    private double _copyProgress;
+
+    [ObservableProperty]
+    private double _copyTotal;
+
+    [ObservableProperty]
+    private bool _isCopying;
+
+    private readonly List<NamingPattern> _namingPatterns = new();
+    private bool _isSyncingFinalName;
+
     public ObservableCollection<FileItemModel> PendingFiles { get; } = new();
+
+    private void AttachItemEvents(FileItemModel item)
+    {
+        item.PropertyChanged -= FileItem_PropertyChanged;
+        item.PropertyChanged += FileItem_PropertyChanged;
+    }
+
+    private void FileItem_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (_isSyncingFinalName) return;
+
+        if (e.PropertyName == nameof(FileItemModel.FinalFileName) && sender is FileItemModel changedItem)
+        {
+            _isSyncingFinalName = true;
+            try
+            {
+                foreach (var item in PendingFiles)
+                {
+                    if (item != changedItem && string.Equals(item.FileName, changedItem.FileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        item.FinalFileName = changedItem.FinalFileName;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(changedItem.OriginalRawSeries) &&
+                    !string.Equals(changedItem.FinalFileName, changedItem.OriginalAutoFileName, StringComparison.Ordinal))
+                {
+                    SaveOrUpdateNamingPattern(changedItem);
+                }
+            }
+            finally
+            {
+                _isSyncingFinalName = false;
+            }
+        }
+    }
+
+    private void SaveOrUpdateNamingPattern(FileItemModel item)
+    {
+        string rawSeries = item.OriginalRawSeries;
+        if (string.IsNullOrWhiteSpace(rawSeries) || string.IsNullOrWhiteSpace(item.FinalFileName)) return;
+
+        string extension = Path.GetExtension(item.FinalFileName);
+        string template = item.FinalFileName;
+
+        if (item.VolumeNumber.HasValue)
+        {
+            string volD2 = item.VolumeNumber.Value.ToString("D2");
+            string volSimple = item.VolumeNumber.Value.ToString();
+
+            if (template.Contains(volD2))
+            {
+                template = ReplaceLast(template, volD2, "{Volume:D2}");
+            }
+            else if (template.Contains(volSimple))
+            {
+                template = ReplaceLast(template, volSimple, "{Volume}");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(extension))
+        {
+            template = ReplaceLast(template, extension, "{Extension}");
+        }
+
+        string normRaw = System.Text.RegularExpressions.Regex.Replace(rawSeries, @"[\s,_\-]", "").ToLowerInvariant();
+        var existing = _namingPatterns.FirstOrDefault(p =>
+            System.Text.RegularExpressions.Regex.Replace(p.OriginalRawSeries, @"[\s,_\-]", "").ToLowerInvariant() == normRaw);
+
+        if (existing != null)
+        {
+            existing.CustomTemplate = template;
+        }
+        else
+        {
+            var newPattern = new NamingPattern
+            {
+                OriginalRawSeries = rawSeries,
+                CustomTemplate = template
+            };
+            _namingPatterns.Add(newPattern);
+        }
+
+        _ = SaveNamingPatternToDbAsync(rawSeries, template);
+    }
+
+    private string ReplaceLast(string text, string search, string replace)
+    {
+        int pos = text.LastIndexOf(search, StringComparison.OrdinalIgnoreCase);
+        if (pos < 0) return text;
+        return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+    }
+
+    private async Task SaveNamingPatternToDbAsync(string originalRawSeries, string customTemplate)
+    {
+        try
+        {
+            using var db = new AppDbContext();
+            string normRaw = System.Text.RegularExpressions.Regex.Replace(originalRawSeries, @"[\s,_\-]", "").ToLowerInvariant();
+            var dbEntries = await db.NamingPatterns.ToListAsync();
+            var dbMatch = dbEntries.FirstOrDefault(p =>
+                System.Text.RegularExpressions.Regex.Replace(p.OriginalRawSeries, @"[\s,_\-]", "").ToLowerInvariant() == normRaw);
+
+            if (dbMatch != null)
+            {
+                dbMatch.CustomTemplate = customTemplate;
+            }
+            else
+            {
+                db.NamingPatterns.Add(new NamingPattern
+                {
+                    OriginalRawSeries = originalRawSeries,
+                    CustomTemplate = customTemplate
+                });
+            }
+
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erro ao salvar NamingPattern: {ex.Message}");
+        }
+    }
 
     private bool _sortAscendingBySource = true;
     private bool _sortAscendingByDestination = true;
@@ -69,6 +204,22 @@ public partial class DashboardViewModel : ObservableObject
     {
         await LoadConfiguredPathsAsync();
         await EnsureDirectoryCacheAsync();
+        await LoadNamingPatternsAsync();
+    }
+
+    private async Task LoadNamingPatternsAsync()
+    {
+        try
+        {
+            using var db = new AppDbContext();
+            var patterns = await db.NamingPatterns.ToListAsync();
+            _namingPatterns.Clear();
+            _namingPatterns.AddRange(patterns);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erro ao carregar NamingPatterns: {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -160,13 +311,17 @@ public partial class DashboardViewModel : ObservableObject
             var firstFile = GetFirstFilePath(filePaths);
             if (!string.IsNullOrEmpty(firstFile))
             {
-                var detectedType = DetectMediaTypeForFile(firstFile);
-                if (detectedType.HasValue)
+                bool isCurrentCompatible = SelectedMediaTypeOption != null && ExtensionHelper.IsSupportedFile(firstFile, SelectedMediaTypeOption.Type);
+                if (!isCurrentCompatible)
                 {
-                    var option = MediaTypeOptions.FirstOrDefault(o => o.Type == detectedType.Value);
-                    if (option != null)
+                    var detectedType = DetectMediaTypeForFile(firstFile);
+                    if (detectedType.HasValue)
                     {
-                        SelectedMediaTypeOption = option;
+                        var option = MediaTypeOptions.FirstOrDefault(o => o.Type == detectedType.Value);
+                        if (option != null)
+                        {
+                            SelectedMediaTypeOption = option;
+                        }
                     }
                 }
             }
@@ -321,10 +476,10 @@ public partial class DashboardViewModel : ObservableObject
                 continue;
             }
 
-            var processed = FileNameProcessor.Process(fileName, targetMediaType);
-
             foreach (var dest in matchingPaths)
             {
+                var processed = FileNameProcessor.Process(fileName, targetMediaType, _namingPatterns, dest.CustomSuffix);
+
                 var item = new FileItemModel
                 {
                     FileName = fileName,
@@ -332,7 +487,9 @@ public partial class DashboardViewModel : ObservableObject
                     DestinationFolder = dest.Path,
                     MediaTypeDisplayName = targetMediaType.ToDisplayName(),
                     IsSubfoldersActive = dest.IncludesSubfolders,
-                    VolumeNumber = processed.VolumeNumber
+                    VolumeNumber = processed.VolumeNumber,
+                    OriginalRawSeries = processed.OriginalRawSeries,
+                    OriginalAutoFileName = processed.FormattedFileName
                 };
 
                 if (!dest.IncludesSubfolders)
@@ -345,14 +502,37 @@ public partial class DashboardViewModel : ObservableObject
                 else
                 {
                     item.FinalFileName = processed.FormattedFileName;
-                    var matchedCache = FindMatchingDirectoryCache(dest.Path, processed.SeriesName);
+                    var matchedCache = FindMatchingDirectoryCache(dest.Path, processed.SeriesName, targetMediaType);
 
-                    if (matchedCache != null)
+                    if (matchedCache != null && Directory.Exists(matchedCache.FolderPath))
                     {
                         item.SeriesFolderName = matchedCache.SeriesName;
                         item.TargetDirectory = matchedCache.FolderPath;
-                        item.RowColor = "Transparent";
-                        item.StatusTooltip = $"Pasta de destino localizada: {matchedCache.FolderPath}";
+
+                        if (processed.VolumeNumber.HasValue && processed.VolumeNumber.Value > 1)
+                        {
+                            int maxVol = GetMaxVolumeInFolderAndQueue(matchedCache.FolderPath, processed.SeriesName);
+                            if (maxVol > 0 && processed.VolumeNumber.Value > maxVol + 1)
+                            {
+                                item.RowColor = "#FFF97316"; // Amarelo
+                                item.StatusTooltip = $"Atenção: Pulo de volume! Último volume detectado é o {maxVol}, adicionando {processed.VolumeNumber.Value}.";
+                            }
+                            else if (maxVol == 0)
+                            {
+                                item.RowColor = "#FFF97316"; // Amarelo
+                                item.StatusTooltip = $"Atenção: Pasta vazia! Adicionando Volume {processed.VolumeNumber.Value} sem os anteriores.";
+                            }
+                            else
+                            {
+                                item.RowColor = "Transparent";
+                                item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
+                            }
+                        }
+                        else
+                        {
+                            item.RowColor = "Transparent";
+                            item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
+                        }
                     }
                     else
                     {
@@ -360,12 +540,14 @@ public partial class DashboardViewModel : ObservableObject
                                        targetMediaType == MediaType.EbookIngles ||
                                        targetMediaType == MediaType.EbookJapones;
 
-                        var seriesFolderName = isEbook && !processed.SeriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase)
-                            ? $"{processed.SeriesName} (Novel)"
-                            : processed.SeriesName;
+                        var seriesFolderName = matchedCache != null 
+                            ? matchedCache.SeriesName 
+                            : (isEbook && !processed.SeriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase)
+                                ? $"{processed.SeriesName} (Novel)"
+                                : processed.SeriesName);
 
                         item.SeriesFolderName = seriesFolderName;
-                        var proposedFolder = Path.Combine(dest.Path, seriesFolderName);
+                        var proposedFolder = matchedCache != null ? matchedCache.FolderPath : Path.Combine(dest.Path, seriesFolderName);
                         item.TargetDirectory = proposedFolder;
 
                         if (processed.VolumeNumber == 1)
@@ -376,25 +558,178 @@ public partial class DashboardViewModel : ObservableObject
                         else
                         {
                             item.RowColor = "#EF4444"; // Vermelho
-                            item.StatusTooltip = $"Atenção: Pasta da série não encontrada para Volume {processed.VolumeNumber}!";
+                            item.StatusTooltip = $"Atenção: Pasta da série não encontrada no destino para Volume {processed.VolumeNumber}!";
                         }
                     }
                 }
 
+                AttachItemEvents(item);
                 PendingFiles.Add(item);
                 addedCount++;
             }
         }
     }
 
-    private DirectoryCache? FindMatchingDirectoryCache(string rootPath, string seriesName)
+    private int GetMaxVolumeInFolderAndQueue(string folderPath, string seriesName)
+    {
+        int maxVol = 0;
+
+        if (Directory.Exists(folderPath))
+        {
+            try
+            {
+                var files = Directory.GetFiles(folderPath);
+                foreach (var f in files)
+                {
+                    var filename = Path.GetFileName(f);
+                    var volMatch = System.Text.RegularExpressions.Regex.Match(filename, @"\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    if (volMatch.Success && int.TryParse(volMatch.Groups["vol"].Value, out int v))
+                    {
+                        if (v > maxVol) maxVol = v;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        foreach (var pending in PendingFiles)
+        {
+            if (pending.VolumeNumber.HasValue &&
+                string.Equals(pending.TargetDirectory, folderPath, StringComparison.OrdinalIgnoreCase))
+            {
+                if (pending.VolumeNumber.Value > maxVol) maxVol = pending.VolumeNumber.Value;
+            }
+        }
+
+        return maxVol;
+    }
+
+    partial void OnSelectedMediaTypeOptionChanged(MediaTypeOption? value)
+    {
+        PendingFiles.Clear();
+    }
+
+    private DirectoryCache? FindMatchingDirectoryCache(string rootPath, string seriesName, MediaType targetMediaType)
     {
         string cleanTarget = NormalizeForComparison(seriesName);
 
-        return _inMemoryDirectoryCache.FirstOrDefault(c =>
-            c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
+        // 1. Prioriza encontrar por MediaType e SeriesName (ideal para caminhos personalizados salvos)
+        var match = _inMemoryDirectoryCache.FirstOrDefault(c =>
+            c.MediaType == targetMediaType &&
             (NormalizeForComparison(c.SeriesName).Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
              cleanTarget.Contains(NormalizeForComparison(c.SeriesName), StringComparison.OrdinalIgnoreCase)));
+
+        // 2. Fallback: Se não encontrou por MediaType, tenta por RootPath
+        if (match == null)
+        {
+            match = _inMemoryDirectoryCache.FirstOrDefault(c =>
+                c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
+                (NormalizeForComparison(c.SeriesName).Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
+                 cleanTarget.Contains(NormalizeForComparison(c.SeriesName), StringComparison.OrdinalIgnoreCase)));
+        }
+
+        // 3. Fallback de Disco
+        if (match == null && Directory.Exists(rootPath))
+        {
+            try
+            {
+                var subdirs = Directory.GetDirectories(rootPath);
+                foreach (var dir in subdirs)
+                {
+                    var folderName = Path.GetFileName(dir);
+                    string cleanFolder = NormalizeForComparison(folderName);
+
+                    if (cleanFolder.Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
+                        cleanTarget.Contains(cleanFolder, StringComparison.OrdinalIgnoreCase))
+                    {
+                        match = new DirectoryCache
+                        {
+                            RootPath = rootPath,
+                            SeriesName = folderName,
+                            FolderPath = dir,
+                            MediaType = targetMediaType,
+                            LastScanned = DateTime.Now
+                        };
+                        _inMemoryDirectoryCache.Add(match);
+                        break;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return match;
+    }
+
+    public void UpdateDirectoryCache(string seriesName, string folderPath)
+    {
+        if (string.IsNullOrWhiteSpace(seriesName) || string.IsNullOrWhiteSpace(folderPath)) return;
+
+        string cleanTarget = NormalizeForComparison(seriesName);
+        var mediaType = SelectedMediaTypeOption?.Type ?? MediaType.EbookPortugues;
+        string rootPath = Path.GetDirectoryName(folderPath) ?? string.Empty;
+
+        var existing = _inMemoryDirectoryCache.FirstOrDefault(c =>
+            c.MediaType == mediaType &&
+            NormalizeForComparison(c.SeriesName).Equals(cleanTarget, StringComparison.OrdinalIgnoreCase));
+
+        if (existing != null)
+        {
+            existing.FolderPath = folderPath;
+            existing.RootPath = rootPath;
+            existing.LastScanned = DateTime.Now;
+        }
+        else
+        {
+            var newCache = new DirectoryCache
+            {
+                SeriesName = seriesName,
+                FolderPath = folderPath,
+                RootPath = rootPath,
+                MediaType = mediaType,
+                LastScanned = DateTime.Now
+            };
+            _inMemoryDirectoryCache.Add(newCache);
+        }
+
+        _ = SaveDirectoryCacheToDbAsync(seriesName, folderPath, rootPath, mediaType);
+    }
+
+    private async Task SaveDirectoryCacheToDbAsync(string seriesName, string folderPath, string rootPath, MediaType mediaType)
+    {
+        try
+        {
+            using var db = new AppDbContext();
+            string cleanTarget = NormalizeForComparison(seriesName);
+            var dbEntries = await db.DirectoryCaches.ToListAsync();
+            var dbMatch = dbEntries.FirstOrDefault(c =>
+                c.MediaType == mediaType &&
+                NormalizeForComparison(c.SeriesName).Equals(cleanTarget, StringComparison.OrdinalIgnoreCase));
+
+            if (dbMatch != null)
+            {
+                dbMatch.FolderPath = folderPath;
+                dbMatch.RootPath = rootPath;
+                dbMatch.LastScanned = DateTime.Now;
+            }
+            else
+            {
+                db.DirectoryCaches.Add(new DirectoryCache
+                {
+                    SeriesName = seriesName,
+                    FolderPath = folderPath,
+                    RootPath = rootPath,
+                    MediaType = mediaType,
+                    LastScanned = DateTime.Now
+                });
+            }
+
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erro ao salvar DirectoryCache: {ex.Message}");
+        }
     }
 
     private string NormalizeForComparison(string text)
@@ -435,6 +770,7 @@ public partial class DashboardViewModel : ObservableObject
         PendingFiles.Clear();
         foreach (var item in items)
         {
+            AttachItemEvents(item);
             PendingFiles.Add(item);
         }
     }
@@ -448,14 +784,21 @@ public partial class DashboardViewModel : ObservableObject
             return;
         }
 
+        IsCopying = true;
+        CopyProgress = 0;
+        CopyTotal = PendingFiles.Count;
+
         int copiedCount = 0;
         int errorCount = 0;
         var completedItems = new List<FileItemModel>();
+        var itemsToCopy = PendingFiles.ToList();
 
-        foreach (var item in PendingFiles.ToList())
+        foreach (var item in itemsToCopy)
         {
             try
             {
+                StatusMessage = $"Copiando: {item.FinalFileName}... ({copiedCount + 1}/{(int)CopyTotal})";
+
                 if (!Directory.Exists(item.TargetDirectory))
                 {
                     Directory.CreateDirectory(item.TargetDirectory);
@@ -481,7 +824,9 @@ public partial class DashboardViewModel : ObservableObject
                 // Registra no log de cópia para rastreabilidade
                 CopyLogger.LogCopy(item.FilePath, item.MediaTypeDisplayName, item.FinalFileName, item.TargetDirectory);
 
-                completedItems.Add(item);
+                item.CopiedFilePath = destFilePath;
+                item.IsCopied = true;
+                item.RowColor = "Transparent";
                 copiedCount++;
             }
             catch (Exception ex)
@@ -490,12 +835,11 @@ public partial class DashboardViewModel : ObservableObject
                 item.RowColor = "#EF4444";
                 item.StatusTooltip = $"Erro ao copiar: {ex.Message}";
             }
+
+            CopyProgress = copiedCount + errorCount;
         }
 
-        foreach (var item in completedItems)
-        {
-            PendingFiles.Remove(item);
-        }
+        IsCopying = false;
 
         if (errorCount == 0)
         {
@@ -504,6 +848,44 @@ public partial class DashboardViewModel : ObservableObject
         else
         {
             StatusMessage = $"{copiedCount} arquivo(s) copiados com sucesso. {errorCount} falharam.";
+        }
+    }
+
+    [RelayCommand]
+    private void OpenCopiedFolder(FileItemModel? item)
+    {
+        if (item == null) return;
+
+        string targetPath = !string.IsNullOrEmpty(item.CopiedFilePath) && File.Exists(item.CopiedFilePath)
+            ? item.CopiedFilePath
+            : item.TargetDirectory;
+
+        if (string.IsNullOrEmpty(targetPath)) return;
+
+        try
+        {
+            if (File.Exists(targetPath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"/select, \"{targetPath}\"",
+                    UseShellExecute = true
+                });
+            }
+            else if (Directory.Exists(targetPath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{targetPath}\"",
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Erro ao abrir pasta: {ex.Message}";
         }
     }
 

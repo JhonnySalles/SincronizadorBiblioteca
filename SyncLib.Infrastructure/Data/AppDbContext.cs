@@ -9,6 +9,7 @@ public class AppDbContext : DbContext
 {
     public DbSet<ConfigurationPath> ConfigurationPaths { get; set; } = null!;
     public DbSet<DirectoryCache> DirectoryCaches { get; set; } = null!;
+    public DbSet<NamingPattern> NamingPatterns { get; set; } = null!;
 
     public static string DbPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -39,6 +40,7 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Path).IsRequired();
             entity.Property(e => e.MediaType).HasConversion<string>();
+            entity.Property(e => e.CustomSuffix).HasDefaultValue("");
         });
 
         modelBuilder.Entity<DirectoryCache>(entity =>
@@ -48,6 +50,13 @@ public class AppDbContext : DbContext
             entity.Property(e => e.SeriesName).IsRequired();
             entity.Property(e => e.FolderPath).IsRequired();
             entity.Property(e => e.MediaType).HasConversion<string>();
+        });
+
+        modelBuilder.Entity<NamingPattern>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OriginalRawSeries).IsRequired();
+            entity.Property(e => e.CustomTemplate).IsRequired();
         });
     }
 }
