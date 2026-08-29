@@ -1,0 +1,17 @@
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.csproj.AssemblyReference.cache
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.AssemblyInfoInputs.cache
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.AssemblyInfo.cs
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.csproj.CoreCompileInputs.cache
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\SyncLib.Infrastructure.deps.json
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\SyncLib.Infrastructure.dll
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\SyncLib.Infrastructure.pdb
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\SyncLib.Core.dll
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\SyncLib.Core.pdb
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib..B312D581.Up2Date
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.dll
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\refint\SyncLib.Infrastructure.dll
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.pdb
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\ref\SyncLib.Infrastructure.dll
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\SyncLib.Infrastructure.runtimeconfig.json
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.genruntimeconfig.cache

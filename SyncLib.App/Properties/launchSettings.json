@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SyncLib.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SyncLib.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
