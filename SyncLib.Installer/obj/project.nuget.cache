@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "1PiQp0AetTE=",
+  "success": true,
+  "projectFilePath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Installer\\SyncLib.Installer.wixproj",
+  "expectedPackageFiles": [
+    "F:\\Caches\\NuGet\\packages\\wixtoolset.heat\\4.0.3\\wixtoolset.heat.4.0.3.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\wixtoolset.ui.wixext\\4.0.3\\wixtoolset.ui.wixext.4.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

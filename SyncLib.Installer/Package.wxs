@@ -1,0 +1,56 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="SyncLib"
+           Manufacturer="XXX"
+           Version="1.0.0.0"
+           UpgradeCode="f68b3c9b-8e12-4c02-a720-4a8174f885e2"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais recente do SyncLib já está instalada." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Interface Gráfica de Instalação com Seleção de Pasta -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyFolder" Name="XXX">
+        <Directory Id="INSTALLFOLDER" Name="SyncLib" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Definição dos Atalhos do Menu Iniciar -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="SyncLib">
+        <Component Id="ApplicationShortcut" Guid="7c8d9e01-2a3b-4c5d-6e7f-8a9b0c1d2e3f">
+          <Shortcut Id="AppStartMenuShortcut"
+                    Name="SyncLib"
+                    Description="Sincronizador de Biblioteca"
+                    Target="[INSTALLFOLDER]SyncLib.App.exe"
+                    WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="CleanUpStartMenuFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\XXX\SyncLib" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Atalho Desktop -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="8d9e0f12-3a4b-5c6d-7e8f-9a0b1c2d3e4f">
+        <Shortcut Id="AppDesktopShortcut"
+                  Name="SyncLib"
+                  Description="Sincronizador de Biblioteca"
+                  Target="[INSTALLFOLDER]SyncLib.App.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\XXX\SyncLib" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Componentes e Arquivos Compilados -->
+    <Feature Id="MainFeature" Title="SyncLib" Level="1">
+      <ComponentGroupRef Id="AppHarvestedComponents" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+  </Package>
+</Wix>

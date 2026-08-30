@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -8,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncLib.Infrastructure", "SyncLib.Infrastructure\SyncLib.Infrastructure.csproj", "{98C60A8C-7237-45E2-A5B8-FEF3A98309AF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncLib.App", "SyncLib.App\SyncLib.App.csproj", "{C4F1F953-CFEB-40EB-BE4C-FFBECF789818}"
+EndProject
+Project("{930C7880-3150-4225-8006-B23354F70861}") = "SyncLib.Installer", "SyncLib.Installer\SyncLib.Installer.wixproj", "{E2C784A1-42C5-4389-9B2D-28D8A71F6C8A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

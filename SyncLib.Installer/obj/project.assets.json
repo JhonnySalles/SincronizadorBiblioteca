@@ -1,0 +1,168 @@
+{
+  "version": 3,
+  "targets": {
+    "native,Version=v0.0": {
+      "WixToolset.Heat/4.0.3": {
+        "type": "package",
+        "build": {
+          "build/WixToolset.Heat.targets": {}
+        }
+      },
+      "WixToolset.UI.wixext/4.0.3": {
+        "type": "package",
+        "build": {
+          "build/WixToolset.UI.wixext.targets": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "WixToolset.Heat/4.0.3": {
+      "sha512": "NNaAYVEZo4Gw1mb58OA7/6lXWIx8A6dbX1gXzM+HAEjp35wnTkkB/yYpMeLfCrHSTJ3muAHCvSmI+4qgCFGwmA==",
+      "type": "package",
+      "path": "wixtoolset.heat/4.0.3",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/WixToolset.Heat.targets",
+        "tools/net472/WixToolset.HeatTasks.dll",
+        "tools/net472/x64/Microsoft.Win32.Registry.dll",
+        "tools/net472/x64/System.Configuration.ConfigurationManager.dll",
+        "tools/net472/x64/System.Diagnostics.PerformanceCounter.dll",
+        "tools/net472/x64/System.IO.FileSystem.AccessControl.dll",
+        "tools/net472/x64/System.Runtime.CompilerServices.Unsafe.dll",
+        "tools/net472/x64/System.Security.AccessControl.dll",
+        "tools/net472/x64/System.Security.Permissions.dll",
+        "tools/net472/x64/System.Security.Principal.Windows.dll",
+        "tools/net472/x64/System.Text.Encoding.CodePages.dll",
+        "tools/net472/x64/WixToolset.Core.dll",
+        "tools/net472/x64/WixToolset.Data.dll",
+        "tools/net472/x64/WixToolset.Extensibility.dll",
+        "tools/net472/x64/WixToolset.Versioning.dll",
+        "tools/net472/x64/heat.exe",
+        "tools/net472/x64/heat.exe.config",
+        "tools/net472/x86/Microsoft.Win32.Registry.dll",
+        "tools/net472/x86/System.Configuration.ConfigurationManager.dll",
+        "tools/net472/x86/System.Diagnostics.PerformanceCounter.dll",
+        "tools/net472/x86/System.IO.FileSystem.AccessControl.dll",
+        "tools/net472/x86/System.Runtime.CompilerServices.Unsafe.dll",
+        "tools/net472/x86/System.Security.AccessControl.dll",
+        "tools/net472/x86/System.Security.Permissions.dll",
+        "tools/net472/x86/System.Security.Principal.Windows.dll",
+        "tools/net472/x86/System.Text.Encoding.CodePages.dll",
+        "tools/net472/x86/WixToolset.Core.dll",
+        "tools/net472/x86/WixToolset.Data.dll",
+        "tools/net472/x86/WixToolset.Extensibility.dll",
+        "tools/net472/x86/WixToolset.Versioning.dll",
+        "tools/net472/x86/heat.exe",
+        "tools/net472/x86/heat.exe.config",
+        "tools/net6.0/Microsoft.Win32.SystemEvents.dll",
+        "tools/net6.0/System.Configuration.ConfigurationManager.dll",
+        "tools/net6.0/System.Diagnostics.PerformanceCounter.dll",
+        "tools/net6.0/System.DirectoryServices.dll",
+        "tools/net6.0/System.Drawing.Common.dll",
+        "tools/net6.0/System.Security.Cryptography.ProtectedData.dll",
+        "tools/net6.0/System.Security.Permissions.dll",
+        "tools/net6.0/System.Windows.Extensions.dll",
+        "tools/net6.0/WixToolset.Core.dll",
+        "tools/net6.0/WixToolset.Data.dll",
+        "tools/net6.0/WixToolset.Extensibility.dll",
+        "tools/net6.0/WixToolset.HeatTasks.deps.json",
+        "tools/net6.0/WixToolset.HeatTasks.dll",
+        "tools/net6.0/WixToolset.Versioning.dll",
+        "tools/net6.0/heat.deps.json",
+        "tools/net6.0/heat.dll",
+        "tools/net6.0/heat.dll.config",
+        "tools/net6.0/heat.runtimeconfig.json",
+        "tools/net6.0/runtimes/unix/lib/net6.0/System.Drawing.Common.dll",
+        "tools/net6.0/runtimes/win/lib/net6.0/Microsoft.Win32.SystemEvents.dll",
+        "tools/net6.0/runtimes/win/lib/net6.0/System.Drawing.Common.dll",
+        "tools/net6.0/runtimes/win/lib/net6.0/System.Security.Cryptography.ProtectedData.dll",
+        "tools/net6.0/runtimes/win/lib/net6.0/System.Windows.Extensions.dll",
+        "tools/net6.0/runtimes/win/lib/netcoreapp2.0/System.Diagnostics.PerformanceCounter.dll",
+        "tools/net6.0/runtimes/win/lib/netcoreapp2.0/System.DirectoryServices.dll",
+        "wix.png",
+        "wixtoolset.heat.4.0.3.nupkg.sha512",
+        "wixtoolset.heat.nuspec"
+      ]
+    },
+    "WixToolset.UI.wixext/4.0.3": {
+      "sha512": "93DL5vwJUzbRjLVA0t2Pe5Te/MtHvLmpXDApv+tjuWu8eqDp+dF70YXV4/nuRvdEQiQ2IeMwSDffP5SnVErvuQ==",
+      "type": "package",
+      "path": "wixtoolset.ui.wixext/4.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/WixToolset.UI.wixext.targets",
+        "wix.png",
+        "wixext4/WixToolset.UI.wixext.dll",
+        "wixtoolset.ui.wixext.4.0.3.nupkg.sha512",
+        "wixtoolset.ui.wixext.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "native,Version=v0.0": [
+      "WixToolset.Heat >= 4.0.3",
+      "WixToolset.UI.wixext >= 4.0.3"
+    ]
+  },
+  "packageFolders": {
+    "F:\\Caches\\NuGet\\packages": {},
+    "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Installer\\SyncLib.Installer.wixproj",
+      "projectName": "SyncLibSetup",
+      "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Installer\\SyncLib.Installer.wixproj",
+      "packagesPath": "F:\\Caches\\NuGet\\packages",
+      "outputPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Installer\\obj\\",
+      "projectStyle": "PackageReference",
+      "UsingMicrosoftNETSdk": false,
+      "fallbackFolders": [
+        "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\Jhonny\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "native"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "native": {
+          "targetAlias": "native",
+          "projectReferences": {}
+        }
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      }
+    },
+    "frameworks": {
+      "native": {
+        "targetAlias": "native",
+        "dependencies": {
+          "WixToolset.Heat": {
+            "target": "Package",
+            "version": "[4.0.3, )"
+          },
+          "WixToolset.UI.wixext": {
+            "target": "Package",
+            "version": "[4.0.3, )"
+          }
+        }
+      }
+    }
+  }
+}

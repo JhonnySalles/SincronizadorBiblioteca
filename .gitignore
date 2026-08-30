@@ -1,2 +1,6 @@
 /.vs
 /Executavel
+/Compilado
+/SyncLib.Installer/obj/x64/Release
+/SyncLib.Installer/obj/Release
+/SyncLib.Installer/bin
