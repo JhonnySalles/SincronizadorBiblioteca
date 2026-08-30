@@ -1,17 +1,17 @@
 @echo off
 echo =========================================
-echo Compilando SyncLib em modo Release...
+echo Publicando SyncLib em modo Release Auto-contido na pasta Executavel...
 echo =========================================
 
-dotnet build SyncLib.App\SyncLib.App.csproj -c Release
+dotnet publish SyncLib.App\SyncLib.App.csproj -c Release -r win-x64 --self-contained true -o Executavel
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [ERRO] A compilacao em Release falhou!
+    echo [ERRO] A publicacao em Release falhou!
     pause
     exit /b %ERRORLEVEL%
 )
 
 echo.
-echo [SUCESSO] Compilacao em Release concluida com sucesso!
+echo [SUCESSO] Publicacao em Release concluida com sucesso na pasta Executavel!
 pause

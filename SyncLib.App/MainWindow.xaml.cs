@@ -21,19 +21,40 @@ public sealed partial class MainWindow : Window
         RestorePaneState();
     }
 
+    private static string PaneStateFilePath => System.IO.Path.Combine(
+        System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+        "SyncLib",
+        "pane_state.txt"
+    );
+
     private void RestorePaneState()
     {
-        var localSettings = ApplicationData.Current.LocalSettings;
-        if (localSettings.Values.TryGetValue(IsNavPaneOpenKey, out var isOpenObj) && isOpenObj is bool isOpen)
+        try
         {
-            NavView.IsPaneOpen = isOpen;
+            if (System.IO.File.Exists(PaneStateFilePath))
+            {
+                var content = System.IO.File.ReadAllText(PaneStateFilePath);
+                if (bool.TryParse(content, out var isOpen))
+                {
+                    NavView.IsPaneOpen = isOpen;
+                }
+            }
         }
+        catch { }
     }
 
     private void SavePaneState(bool isOpen)
     {
-        var localSettings = ApplicationData.Current.LocalSettings;
-        localSettings.Values[IsNavPaneOpenKey] = isOpen;
+        try
+        {
+            var dir = System.IO.Path.GetDirectoryName(PaneStateFilePath);
+            if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
+            {
+                System.IO.Directory.CreateDirectory(dir);
+            }
+            System.IO.File.WriteAllText(PaneStateFilePath, isOpen.ToString());
+        }
+        catch { }
     }
 
     private void NavView_PaneOpened(NavigationView sender, object args)

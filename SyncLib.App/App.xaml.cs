@@ -30,7 +30,22 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        AppDomain.CurrentDomain.UnhandledException += (s, e) => LogError("AppDomain", e.ExceptionObject as Exception);
+        TaskScheduler.UnobservedTaskException += (s, e) => LogError("TaskScheduler", e.Exception);
+        this.UnhandledException += (s, e) => { LogError("Xaml", e.Exception); e.Handled = true; };
+
         InitializeComponent();
+    }
+
+    public static void LogError(string source, Exception? ex)
+    {
+        try
+        {
+            var logPath = System.IO.Path.Combine(AppContext.BaseDirectory, "error_log.txt");
+            var content = $"[{DateTime.Now}] [{source}]\n{ex}\n{new string('-', 50)}\n";
+            System.IO.File.AppendAllText(logPath, content);
+        }
+        catch { }
     }
 
     /// <summary>
