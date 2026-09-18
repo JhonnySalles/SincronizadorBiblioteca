@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Path).IsRequired();
             entity.Property(e => e.MediaType).HasConversion<string>();
             entity.Property(e => e.CustomSuffix).HasDefaultValue("");
+            entity.Property(e => e.CustomFolderSuffix).HasDefaultValue("");
         });
 
         modelBuilder.Entity<DirectoryCache>(entity =>

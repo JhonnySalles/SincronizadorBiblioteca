@@ -1,6 +1,6 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="SyncLib"
-           Manufacturer="XXX"
+           Manufacturer="SyncLib"
            Version="1.0.0.0"
            UpgradeCode="f68b3c9b-8e12-4c02-a720-4a8174f885e2"
            Scope="perMachine">
@@ -9,13 +9,25 @@
 
     <MediaTemplate EmbedCab="yes" />
 
+    <!-- Ícone do Aplicativo e do Instalador -->
+    <Icon Id="AppIcon.ico" SourceFile="..\SyncLib.App\Assets\AppIcon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+
+    <!-- Procura a pasta de instalação anterior no Registro para sugerir -->
+    <Property Id="SAVED_INSTALLFOLDER">
+      <RegistrySearch Id="PrevInstallFolderSearch"
+                      Root="HKCU"
+                      Key="Software\SyncLib"
+                      Name="InstallFolder"
+                      Type="raw" />
+    </Property>
+    <SetProperty Id="INSTALLFOLDER" Value="[SAVED_INSTALLFOLDER]" After="AppSearch" Condition="SAVED_INSTALLFOLDER" />
+
     <!-- Interface Gráfica de Instalação com Seleção de Pasta -->
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="CompanyFolder" Name="XXX">
-        <Directory Id="INSTALLFOLDER" Name="SyncLib" />
-      </Directory>
+      <Directory Id="INSTALLFOLDER" Name="SyncLib" />
     </StandardDirectory>
 
     <!-- Definição dos Atalhos do Menu Iniciar -->
@@ -26,9 +38,11 @@
                     Name="SyncLib"
                     Description="Sincronizador de Biblioteca"
                     Target="[INSTALLFOLDER]SyncLib.App.exe"
-                    WorkingDirectory="INSTALLFOLDER" />
+                    WorkingDirectory="INSTALLFOLDER"
+                    Icon="AppIcon.ico" />
           <RemoveFolder Id="CleanUpStartMenuFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
-          <RegistryValue Root="HKCU" Key="Software\XXX\SyncLib" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+          <RegistryValue Root="HKCU" Key="Software\SyncLib" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+          <RegistryValue Root="HKCU" Key="Software\SyncLib" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" />
         </Component>
       </Directory>
     </StandardDirectory>
@@ -40,8 +54,9 @@
                   Name="SyncLib"
                   Description="Sincronizador de Biblioteca"
                   Target="[INSTALLFOLDER]SyncLib.App.exe"
-                  WorkingDirectory="INSTALLFOLDER" />
-        <RegistryValue Root="HKCU" Key="Software\XXX\SyncLib" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\SyncLib" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </StandardDirectory>
 

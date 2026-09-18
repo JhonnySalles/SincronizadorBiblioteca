@@ -102,6 +102,30 @@ public partial class DashboardViewModel : ObservableObject
                 _isSyncingFinalName = false;
             }
         }
+        else if ((e.PropertyName == nameof(FileItemModel.DisplayTargetDirectory) || e.PropertyName == nameof(FileItemModel.TargetDirectory)) && sender is FileItemModel changedFolderItem)
+        {
+            ValidateFolderExistence(changedFolderItem);
+        }
+    }
+
+    public void ValidateFolderExistence(FileItemModel item)
+    {
+        if (string.IsNullOrWhiteSpace(item.TargetDirectory)) return;
+
+        if (Directory.Exists(item.TargetDirectory))
+        {
+            item.RowColor = "Transparent";
+            item.StatusTooltip = $"OK: Pasta localizada ({Path.GetFileName(item.TargetDirectory)}).";
+            if (!string.IsNullOrEmpty(item.SeriesFolderName))
+            {
+                UpdateDirectoryCache(item.SeriesFolderName, item.TargetDirectory);
+            }
+        }
+        else
+        {
+            item.RowColor = "#FFF97316"; // Laranja
+            item.StatusTooltip = $"Pasta da série não existe no destino. Será criada ao copiar: {item.TargetDirectory}";
+        }
     }
 
     private void SaveOrUpdateNamingPattern(FileItemModel item)
@@ -421,13 +445,33 @@ public partial class DashboardViewModel : ObservableObject
         }
 
         var cleanPath = SearchPath.Trim().Trim('"').Trim();
-        if (File.Exists(cleanPath) || Directory.Exists(cleanPath))
+        bool hasExt = Path.HasExtension(cleanPath);
+
+        if (!hasExt)
         {
-            AddFiles(new[] { cleanPath });
+            if (Directory.Exists(cleanPath))
+            {
+                AddFiles(new[] { cleanPath });
+            }
+            else
+            {
+                StatusMessage = $"A pasta informada não foi encontrada: {cleanPath}";
+            }
         }
         else
         {
-            StatusMessage = "O caminho informado não foi encontrado.";
+            if (File.Exists(cleanPath))
+            {
+                AddFiles(new[] { cleanPath });
+            }
+            else if (Directory.Exists(cleanPath))
+            {
+                AddFiles(new[] { cleanPath });
+            }
+            else
+            {
+                StatusMessage = $"O arquivo informado não foi encontrado: {cleanPath}";
+            }
         }
     }
 
@@ -540,11 +584,19 @@ public partial class DashboardViewModel : ObservableObject
                                        targetMediaType == MediaType.EbookIngles ||
                                        targetMediaType == MediaType.EbookJapones;
 
+                        string folderSuffix = !string.IsNullOrWhiteSpace(dest.CustomFolderSuffix)
+                            ? (dest.CustomFolderSuffix.StartsWith(" ") ? dest.CustomFolderSuffix : $" {dest.CustomFolderSuffix.Trim()}")
+                            : (isEbook && !processed.SeriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase) ? " (Novel)" : string.Empty);
+
+                        string baseSeriesName = processed.SeriesName;
+                        if (!string.IsNullOrEmpty(folderSuffix) && !baseSeriesName.EndsWith(folderSuffix.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            baseSeriesName = $"{baseSeriesName}{folderSuffix}";
+                        }
+
                         var seriesFolderName = matchedCache != null 
                             ? matchedCache.SeriesName 
-                            : (isEbook && !processed.SeriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase)
-                                ? $"{processed.SeriesName} (Novel)"
-                                : processed.SeriesName);
+                            : baseSeriesName;
 
                         item.SeriesFolderName = seriesFolderName;
                         var proposedFolder = matchedCache != null ? matchedCache.FolderPath : Path.Combine(dest.Path, seriesFolderName);
@@ -856,32 +908,42 @@ public partial class DashboardViewModel : ObservableObject
     {
         if (item == null) return;
 
-        string targetPath = !string.IsNullOrEmpty(item.CopiedFilePath) && File.Exists(item.CopiedFilePath)
-            ? item.CopiedFilePath
-            : item.TargetDirectory;
-
-        if (string.IsNullOrEmpty(targetPath)) return;
-
         try
         {
-            if (File.Exists(targetPath))
+            if (!string.IsNullOrEmpty(item.CopiedFilePath) && File.Exists(item.CopiedFilePath))
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "explorer.exe",
-                    Arguments = $"/select, \"{targetPath}\"",
+                    Arguments = $"/select, \"{item.CopiedFilePath}\"",
                     UseShellExecute = true
                 });
+                return;
             }
-            else if (Directory.Exists(targetPath))
+
+            if (!string.IsNullOrEmpty(item.TargetDirectory) && Directory.Exists(item.TargetDirectory))
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "explorer.exe",
-                    Arguments = $"\"{targetPath}\"",
+                    Arguments = $"\"{item.TargetDirectory}\"",
                     UseShellExecute = true
                 });
+                return;
             }
+
+            if (!string.IsNullOrEmpty(item.DestinationFolder) && Directory.Exists(item.DestinationFolder))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{item.DestinationFolder}\"",
+                    UseShellExecute = true
+                });
+                return;
+            }
+
+            StatusMessage = "Pasta de destino não encontrada no disco.";
         }
         catch (Exception ex)
         {

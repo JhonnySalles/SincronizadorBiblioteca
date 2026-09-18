@@ -25,6 +25,9 @@ public partial class SettingsViewModel : ObservableObject
     private string _inputCustomSuffix = string.Empty;
 
     [ObservableProperty]
+    private string _inputCustomFolderSuffix = string.Empty;
+
+    [ObservableProperty]
     private bool _inputIncludesSubfolders;
 
     [ObservableProperty]
@@ -98,6 +101,7 @@ public partial class SettingsViewModel : ObservableObject
             MediaType = SelectedMediaTypeOption.Type,
             Description = InputDescription.Trim(),
             CustomSuffix = InputCustomSuffix.Trim(),
+            CustomFolderSuffix = InputCustomFolderSuffix.Trim(),
             IncludesSubfolders = InputIncludesSubfolders
         };
         model.CheckStatus();
@@ -108,6 +112,7 @@ public partial class SettingsViewModel : ObservableObject
         InputPath = string.Empty;
         InputDescription = string.Empty;
         InputCustomSuffix = string.Empty;
+        InputCustomFolderSuffix = string.Empty;
         InputIncludesSubfolders = false;
 
         StatusMessage = "Caminho inserido na lista (clique em Salvar para persistir no banco).";
@@ -143,6 +148,7 @@ public partial class SettingsViewModel : ObservableObject
                     MediaType = model.MediaType,
                     Description = model.Description,
                     CustomSuffix = model.CustomSuffix,
+                    CustomFolderSuffix = model.CustomFolderSuffix,
                     IncludesSubfolders = model.IncludesSubfolders
                 });
             }

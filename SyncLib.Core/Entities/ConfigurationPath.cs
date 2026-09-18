@@ -11,4 +11,5 @@ public class ConfigurationPath
     public bool IncludesSubfolders { get; set; }
     public string Description { get; set; } = string.Empty;
     public string CustomSuffix { get; set; } = string.Empty;
+    public string CustomFolderSuffix { get; set; } = string.Empty;
 }

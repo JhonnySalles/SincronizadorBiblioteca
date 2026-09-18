@@ -60,7 +60,7 @@ public partial class FileItemModel : ObservableObject
 
     public string StatusDotColor => IsCopied ? "#22C55E" : "#888888";
 
-    public Microsoft.UI.Xaml.Visibility FolderButtonVisibility => IsCopied ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+    public Microsoft.UI.Xaml.Visibility FolderButtonVisibility => Microsoft.UI.Xaml.Visibility.Visible;
 
     public string DisplayTargetDirectory
     {
