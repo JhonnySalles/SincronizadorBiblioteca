@@ -44,7 +44,13 @@ public static class FileNameProcessor
 
         string cleanedSeries = seriesRaw
             .Replace("_", " - ")
-            .Replace(",", "");
+            .Replace(",", "")
+            .Replace("'", "")
+            .Replace("\"", "")
+            .Replace("’", "")
+            .Replace("‘", "")
+            .Replace("“", "")
+            .Replace("”", "");
 
         cleanedSeries = Regex.Replace(cleanedSeries, @"\s+", " ").Trim();
         cleanedSeries = Regex.Replace(cleanedSeries, @"\s*-\s*", " - ").Trim(' ', '-');
@@ -125,6 +131,6 @@ public static class FileNameProcessor
 
     private static string Normalize(string input)
     {
-        return Regex.Replace(input, @"[\s,_\-]", "").ToLowerInvariant();
+        return Regex.Replace(input, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
     }
 }

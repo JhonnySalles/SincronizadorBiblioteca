@@ -132,9 +132,9 @@ public partial class DashboardViewModel : ObservableObject
             template = ReplaceLast(template, extension, "{Extension}");
         }
 
-        string normRaw = System.Text.RegularExpressions.Regex.Replace(rawSeries, @"[\s,_\-]", "").ToLowerInvariant();
+        string normRaw = System.Text.RegularExpressions.Regex.Replace(rawSeries, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
         var existing = _namingPatterns.FirstOrDefault(p =>
-            System.Text.RegularExpressions.Regex.Replace(p.OriginalRawSeries, @"[\s,_\-]", "").ToLowerInvariant() == normRaw);
+            System.Text.RegularExpressions.Regex.Replace(p.OriginalRawSeries, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant() == normRaw);
 
         if (existing != null)
         {
@@ -165,10 +165,10 @@ public partial class DashboardViewModel : ObservableObject
         try
         {
             using var db = new AppDbContext();
-            string normRaw = System.Text.RegularExpressions.Regex.Replace(originalRawSeries, @"[\s,_\-]", "").ToLowerInvariant();
+            string normRaw = System.Text.RegularExpressions.Regex.Replace(originalRawSeries, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
             var dbEntries = await db.NamingPatterns.ToListAsync();
             var dbMatch = dbEntries.FirstOrDefault(p =>
-                System.Text.RegularExpressions.Regex.Replace(p.OriginalRawSeries, @"[\s,_\-]", "").ToLowerInvariant() == normRaw);
+                System.Text.RegularExpressions.Regex.Replace(p.OriginalRawSeries, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant() == normRaw);
 
             if (dbMatch != null)
             {
@@ -734,7 +734,7 @@ public partial class DashboardViewModel : ObservableObject
 
     private string NormalizeForComparison(string text)
     {
-        return text.Replace("-", "").Replace("_", "").Replace(",", "").Replace(" ", "").ToLowerInvariant();
+        return System.Text.RegularExpressions.Regex.Replace(text, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
     }
 
     [RelayCommand]

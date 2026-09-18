@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {}
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {}
   },
   "projects": {
-    "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
+        "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
         "projectName": "SyncLib.Core",
-        "projectPath": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
+        "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
         "packagesPath": "F:\\Caches\\NuGet\\packages",
-        "outputPath": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\obj\\",
+        "outputPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -89,14 +89,14 @@
         }
       }
     },
-    "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
+        "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
         "projectName": "SyncLib.Infrastructure",
-        "projectPath": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
+        "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
         "packagesPath": "F:\\Caches\\NuGet\\packages",
-        "outputPath": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\obj\\",
+        "outputPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -118,8 +118,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
-                "projectPath": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj"
+              "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
+                "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj"
               }
             }
           }

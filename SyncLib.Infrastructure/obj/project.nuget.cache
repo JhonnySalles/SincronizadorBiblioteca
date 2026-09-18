@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "rQpL9/IM9xU=",
+  "dgSpecHash": "TbO9QK4+xLo=",
   "success": true,
-  "projectFilePath": "f:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
+  "projectFilePath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
   "expectedPackageFiles": [
     "F:\\Caches\\NuGet\\packages\\closedxml\\0.105.1\\closedxml.0.105.1.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\closedxml.parser\\2.0.0\\closedxml.parser.2.0.0.nupkg.sha512",
