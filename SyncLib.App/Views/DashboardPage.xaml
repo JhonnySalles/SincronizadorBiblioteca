@@ -38,20 +38,27 @@
 
             <!-- Lista Horizontal de Pastas -->
             <ScrollViewer Grid.Column="0" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto" VerticalScrollMode="Disabled">
-                <ItemsControl ItemsSource="{x:Bind ViewModel.ConfiguredPaths}">
-                    <ItemsControl.ItemsPanel>
+                <ListView ItemsSource="{x:Bind ViewModel.ConfiguredPaths}"
+                          SelectionMode="None"
+                          IsItemClickEnabled="True"
+                          ItemClick="ConfiguredPath_ItemClick"
+                          ScrollViewer.HorizontalScrollMode="Enabled"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.VerticalScrollMode="Disabled">
+                    <ListView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" Spacing="12" />
                         </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+                    </ListView.ItemsPanel>
 
-                    <ItemsControl.ItemTemplate>
+                    <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:PathDisplayModel">
                             <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
                                     BorderThickness="1" 
                                     CornerRadius="20" 
-                                    Padding="12,6">
+                                    Padding="12,6"
+                                    ToolTipService.ToolTip="Clique para abrir a pasta no Windows Explorer">
                                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                     <!-- Ícone de Pasta -->
                                     <FontIcon Glyph="&#xE8B7;" FontSize="16" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
@@ -64,8 +71,8 @@
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    </ListView.ItemTemplate>
+                </ListView>
             </ScrollViewer>
 
             <!-- Botão Refresh à Direita -->

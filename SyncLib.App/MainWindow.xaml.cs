@@ -71,22 +71,46 @@ public sealed partial class MainWindow : Window
     {
         // Navegação inicial para a aba Geral
         NavView.SelectedItem = NavView.MenuItems[0];
-        RootFrame.Navigate(typeof(DashboardPage));
+        NavigateTo(typeof(DashboardPage));
+    }
+
+    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (args.IsSettingsSelected)
+        {
+            NavigateTo(typeof(SettingsPage));
+        }
+        else if (args.SelectedItemContainer != null)
+        {
+            var tag = args.SelectedItemContainer.Tag?.ToString();
+            if (tag == "DashboardPage")
+            {
+                NavigateTo(typeof(DashboardPage));
+            }
+        }
     }
 
     private void NavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
-        if (args.IsSettingsInvoked)
+        if (args.IsSettingsInvoked || (sender.SettingsItem is NavigationViewItemBase settingsItem && args.InvokedItemContainer == settingsItem))
         {
-            RootFrame.Navigate(typeof(SettingsPage));
+            NavigateTo(typeof(SettingsPage));
         }
         else if (args.InvokedItemContainer != null)
         {
             var tag = args.InvokedItemContainer.Tag?.ToString();
             if (tag == "DashboardPage")
             {
-                RootFrame.Navigate(typeof(DashboardPage));
+                NavigateTo(typeof(DashboardPage));
             }
+        }
+    }
+
+    private void NavigateTo(System.Type pageType)
+    {
+        if (RootFrame.CurrentSourcePageType != pageType)
+        {
+            RootFrame.Navigate(pageType);
         }
     }
 }

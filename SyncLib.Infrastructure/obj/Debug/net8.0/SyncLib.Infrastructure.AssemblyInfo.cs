@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SyncLib.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7d7cee7af4ce3301161ccd0594c68aa6cd0ff453")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+596843a2c4c8ae6e9d934b771073f80f968ba360")]
 [assembly: System.Reflection.AssemblyProductAttribute("SyncLib.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SyncLib.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

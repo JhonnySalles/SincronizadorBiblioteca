@@ -118,7 +118,7 @@ public partial class DashboardViewModel : ObservableObject
             item.StatusTooltip = $"OK: Pasta localizada ({Path.GetFileName(item.TargetDirectory)}).";
             if (!string.IsNullOrEmpty(item.SeriesFolderName))
             {
-                UpdateDirectoryCache(item.SeriesFolderName, item.TargetDirectory);
+                UpdateDirectoryCache(item.SeriesFolderName, item.TargetDirectory, item.DestinationFolder);
             }
         }
         else
@@ -257,9 +257,14 @@ public partial class DashboardViewModel : ObservableObject
             var entities = await db.ConfigurationPaths.ToListAsync();
             ConfiguredPaths.Clear();
 
-            foreach (var entity in entities)
+            var sorted = entities
+                .Select(e => new PathDisplayModel(e))
+                .OrderBy(p => p.MediaTypeDisplayName)
+                .ThenBy(p => p.Description)
+                .ToList();
+
+            foreach (var model in sorted)
             {
-                var model = new PathDisplayModel(entity);
                 ConfiguredPaths.Add(model);
             }
 
@@ -665,22 +670,14 @@ public partial class DashboardViewModel : ObservableObject
     {
         string cleanTarget = NormalizeForComparison(seriesName);
 
-        // 1. Prioriza encontrar por MediaType e SeriesName (ideal para caminhos personalizados salvos)
+        // 1. Busca no cache pelo RootPath e MediaType especificados
         var match = _inMemoryDirectoryCache.FirstOrDefault(c =>
+            c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
             c.MediaType == targetMediaType &&
             (NormalizeForComparison(c.SeriesName).Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
              cleanTarget.Contains(NormalizeForComparison(c.SeriesName), StringComparison.OrdinalIgnoreCase)));
 
-        // 2. Fallback: Se não encontrou por MediaType, tenta por RootPath
-        if (match == null)
-        {
-            match = _inMemoryDirectoryCache.FirstOrDefault(c =>
-                c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
-                (NormalizeForComparison(c.SeriesName).Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
-                 cleanTarget.Contains(NormalizeForComparison(c.SeriesName), StringComparison.OrdinalIgnoreCase)));
-        }
-
-        // 3. Fallback de Disco
+        // 2. Fallback de Disco na pasta raiz desta biblioteca específica
         if (match == null && Directory.Exists(rootPath))
         {
             try
@@ -703,6 +700,7 @@ public partial class DashboardViewModel : ObservableObject
                             LastScanned = DateTime.Now
                         };
                         _inMemoryDirectoryCache.Add(match);
+                        _ = SaveDirectoryCacheToDbAsync(folderName, dir, rootPath, targetMediaType);
                         break;
                     }
                 }
@@ -713,15 +711,18 @@ public partial class DashboardViewModel : ObservableObject
         return match;
     }
 
-    public void UpdateDirectoryCache(string seriesName, string folderPath)
+    public void UpdateDirectoryCache(string seriesName, string folderPath, string? explicitRootPath = null)
     {
         if (string.IsNullOrWhiteSpace(seriesName) || string.IsNullOrWhiteSpace(folderPath)) return;
 
         string cleanTarget = NormalizeForComparison(seriesName);
         var mediaType = SelectedMediaTypeOption?.Type ?? MediaType.EbookPortugues;
-        string rootPath = Path.GetDirectoryName(folderPath) ?? string.Empty;
+        string rootPath = !string.IsNullOrWhiteSpace(explicitRootPath)
+            ? explicitRootPath
+            : (Path.GetDirectoryName(folderPath) ?? string.Empty);
 
         var existing = _inMemoryDirectoryCache.FirstOrDefault(c =>
+            c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
             c.MediaType == mediaType &&
             NormalizeForComparison(c.SeriesName).Equals(cleanTarget, StringComparison.OrdinalIgnoreCase));
 
@@ -755,6 +756,7 @@ public partial class DashboardViewModel : ObservableObject
             string cleanTarget = NormalizeForComparison(seriesName);
             var dbEntries = await db.DirectoryCaches.ToListAsync();
             var dbMatch = dbEntries.FirstOrDefault(c =>
+                c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
                 c.MediaType == mediaType &&
                 NormalizeForComparison(c.SeriesName).Equals(cleanTarget, StringComparison.OrdinalIgnoreCase));
 

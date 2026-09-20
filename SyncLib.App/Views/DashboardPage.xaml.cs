@@ -100,7 +100,7 @@ public sealed partial class DashboardPage : Page
                 item.RowColor = "Transparent";
                 item.StatusTooltip = $"Pasta personalizada selecionada: {folder.Path}";
 
-                ViewModel.UpdateDirectoryCache(item.SeriesFolderName, folder.Path);
+                ViewModel.UpdateDirectoryCache(item.SeriesFolderName, folder.Path, item.DestinationFolder);
             }
         }
     }
@@ -118,6 +118,29 @@ public sealed partial class DashboardPage : Page
         if (sender is Button button && button.DataContext is SyncLib.App.Models.FileItemModel item)
         {
             ViewModel.OpenCopiedFolderCommand.Execute(item);
+        }
+    }
+
+    private void ConfiguredPath_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is SyncLib.App.Models.PathDisplayModel item)
+        {
+            if (System.IO.Directory.Exists(item.Path))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = item.Path,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erro ao abrir pasta: {ex.Message}");
+                }
+            }
         }
     }
 }

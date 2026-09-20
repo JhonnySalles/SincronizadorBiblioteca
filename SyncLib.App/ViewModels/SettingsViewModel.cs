@@ -171,4 +171,27 @@ public partial class SettingsViewModel : ObservableObject
         }
         StatusMessage = "Status dos caminhos atualizados.";
     }
+
+    public void SortPaths(string? columnTag, bool ascending)
+    {
+        if (string.IsNullOrEmpty(columnTag) || ConfiguredPaths.Count <= 1) return;
+
+        List<PathDisplayModel> sorted = columnTag switch
+        {
+            "MediaType" or "Tipo" => ascending ? ConfiguredPaths.OrderBy(p => p.MediaTypeDisplayName).ToList() : ConfiguredPaths.OrderByDescending(p => p.MediaTypeDisplayName).ToList(),
+            "Description" or "Descrição" => ascending ? ConfiguredPaths.OrderBy(p => p.Description).ToList() : ConfiguredPaths.OrderByDescending(p => p.Description).ToList(),
+            "CustomSuffix" or "Sufixo Arquivo" => ascending ? ConfiguredPaths.OrderBy(p => p.CustomSuffix).ToList() : ConfiguredPaths.OrderByDescending(p => p.CustomSuffix).ToList(),
+            "CustomFolderSuffix" or "Sufixo Pasta" => ascending ? ConfiguredPaths.OrderBy(p => p.CustomFolderSuffix).ToList() : ConfiguredPaths.OrderByDescending(p => p.CustomFolderSuffix).ToList(),
+            "Path" or "Caminho" => ascending ? ConfiguredPaths.OrderBy(p => p.Path).ToList() : ConfiguredPaths.OrderByDescending(p => p.Path).ToList(),
+            "IncludesSubfolders" or "Sub-pastas" => ascending ? ConfiguredPaths.OrderBy(p => p.IncludesSubfolders).ToList() : ConfiguredPaths.OrderByDescending(p => p.IncludesSubfolders).ToList(),
+            "Status" or "StatusText" => ascending ? ConfiguredPaths.OrderBy(p => p.StatusText).ToList() : ConfiguredPaths.OrderByDescending(p => p.StatusText).ToList(),
+            _ => ConfiguredPaths.ToList()
+        };
+
+        ConfiguredPaths.Clear();
+        foreach (var item in sorted)
+        {
+            ConfiguredPaths.Add(item);
+        }
+    }
 }

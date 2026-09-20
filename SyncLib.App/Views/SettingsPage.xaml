@@ -8,6 +8,8 @@
     xmlns:models="using:SyncLib.App.Models"
     xmlns:viewmodels="using:SyncLib.App.ViewModels"
     xmlns:converters="using:SyncLib.App.Converters"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:primitives="using:CommunityToolkit.WinUI.UI.Controls.Primitives"
     mc:Ignorable="d"
     Background="Transparent">
 
@@ -94,77 +96,99 @@
         </Border>
 
         <!-- Grid de Caminhos Configurados -->
-        <Grid Grid.Row="2" RowSpacing="8">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <!-- Cabeçalhos de Coluna -->
-            <Grid Grid.Row="0" Margin="16,0,16,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="140" />
-                    <ColumnDefinition Width="150" />
-                    <ColumnDefinition Width="95" />
-                    <ColumnDefinition Width="95" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="60" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Tipo" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="0"/>
-                <TextBlock Text="Descrição" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="1"/>
-                <TextBlock Text="Sufixo Arq" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="2"/>
-                <TextBlock Text="Sufixo Pasta" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="3"/>
-                <TextBlock Text="Caminho" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="4"/>
-                <TextBlock Text="Sub-pastas" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" HorizontalAlignment="Center" Grid.Column="5"/>
-                <TextBlock Text="Status" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="6"/>
-                <TextBlock Text="Ações" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" HorizontalAlignment="Center" Grid.Column="7"/>
-            </Grid>
-
-            <!-- Tabela ListView -->
-            <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8">
-                <ListView ItemsSource="{x:Bind ViewModel.ConfiguredPaths}" SelectionMode="None">
-                    <ListView.ItemTemplate>
+        <controls:DataGrid x:Name="ConfiguredPathsDataGrid"
+                           Grid.Row="2"
+                           ItemsSource="{x:Bind ViewModel.ConfiguredPaths, Mode=OneWay}"
+                           AutoGenerateColumns="False"
+                           CanUserResizeColumns="True"
+                           CanUserSortColumns="True"
+                           Sorting="ConfiguredPathsDataGrid_Sorting"
+                           GridLinesVisibility="Horizontal"
+                           HeadersVisibility="Column"
+                           SelectionMode="Single"
+                           RowHeight="44"
+                           Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                           BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                           BorderThickness="1"
+                           CornerRadius="8"
+                           HorizontalScrollBarVisibility="Auto"
+                           VerticalScrollBarVisibility="Auto">
+            <controls:DataGrid.ColumnHeaderStyle>
+                <Style TargetType="primitives:DataGridColumnHeader">
+                    <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
+                    <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="FontSize" Value="13"/>
+                    <Setter Property="Height" Value="40"/>
+                    <Setter Property="SeparatorBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+                </Style>
+            </controls:DataGrid.ColumnHeaderStyle>
+            <controls:DataGrid.Columns>
+                <!-- Tipo -->
+                <controls:DataGridTemplateColumn Header="Tipo" Tag="MediaType" Width="140" MinWidth="100" CanUserSort="True">
+                    <controls:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:PathDisplayModel">
-                            <Grid Padding="4,8" ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="140" />
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="95" />
-                                    <ColumnDefinition Width="95" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="80" />
-                                    <ColumnDefinition Width="80" />
-                                    <ColumnDefinition Width="60" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="{x:Bind MediaTypeDisplayName}" VerticalAlignment="Center" FontWeight="Medium" Grid.Column="0"/>
-                                <TextBlock Text="{x:Bind Description}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Grid.Column="1"/>
-                                <TextBlock Text="{x:Bind CustomSuffix}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Grid.Column="2"/>
-                                <TextBlock Text="{x:Bind CustomFolderSuffix}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Grid.Column="3"/>
-                                <TextBlock Text="{x:Bind Path}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" Grid.Column="4"/>
-                                
-                                <TextBlock Text="{x:Bind SubfoldersText}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="SemiBold" Grid.Column="5"/>
-
-                                <!-- Badge de Status -->
-                                <Border Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="12" Padding="8,2" Background="{x:Bind StatusColor, Converter={StaticResource StringToBrushConverter}}">
-                                    <TextBlock Text="{x:Bind StatusText}" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
-                                </Border>
-
-                                <!-- Botão Excluir -->
-                                <Button Grid.Column="7" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                        Command="{Binding DataContext.DeletePathCommand, ElementName=SettingsPageRoot}"
-                                        CommandParameter="{x:Bind}"
-                                        Style="{ThemeResource SubtleButtonStyle}">
-                                    <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="#EF4444"/>
-                                </Button>
-                            </Grid>
+                            <TextBlock Text="{x:Bind MediaTypeDisplayName, Mode=OneWay}" VerticalAlignment="Center" Margin="12,0" FontWeight="Medium"/>
                         </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Border>
-        </Grid>
+                    </controls:DataGridTemplateColumn.CellTemplate>
+                    <controls:DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate x:DataType="models:PathDisplayModel">
+                            <ComboBox ItemsSource="{Binding DataContext.MediaTypeOptions, ElementName=SettingsPageRoot}"
+                                      SelectedValue="{Binding MediaType, Mode=TwoWay}"
+                                      SelectedValuePath="Type"
+                                      DisplayMemberPath="DisplayName"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </controls:DataGridTemplateColumn.CellEditingTemplate>
+                </controls:DataGridTemplateColumn>
+
+                <!-- Descrição -->
+                <controls:DataGridTextColumn Header="Descrição" Tag="Description" Width="180" MinWidth="120" CanUserSort="True"
+                                             Binding="{Binding Description, Mode=TwoWay}"/>
+
+                <!-- Sufixo Arquivo -->
+                <controls:DataGridTextColumn Header="Sufixo Arquivo" Tag="CustomSuffix" Width="130" MinWidth="90" CanUserSort="True"
+                                             Binding="{Binding CustomSuffix, Mode=TwoWay}"/>
+
+                <!-- Sufixo Pasta -->
+                <controls:DataGridTextColumn Header="Sufixo Pasta" Tag="CustomFolderSuffix" Width="130" MinWidth="90" CanUserSort="True"
+                                             Binding="{Binding CustomFolderSuffix, Mode=TwoWay}"/>
+
+                <!-- Caminho -->
+                <controls:DataGridTextColumn Header="Caminho" Tag="Path" Width="*" MinWidth="200" CanUserSort="True"
+                                             Binding="{Binding Path, Mode=TwoWay}"/>
+
+                <!-- Sub-pastas -->
+                <controls:DataGridCheckBoxColumn Header="Sub-pastas" Tag="IncludesSubfolders" Width="100" MinWidth="80" CanUserSort="True"
+                                                 Binding="{Binding IncludesSubfolders, Mode=TwoWay}"/>
+
+                <!-- Status -->
+                <controls:DataGridTemplateColumn Header="Status" Tag="Status" Width="95" MinWidth="85" CanUserSort="True" IsReadOnly="True">
+                    <controls:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:PathDisplayModel">
+                            <Border VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0" CornerRadius="12" Padding="8,2" Background="{x:Bind StatusColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}">
+                                <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
+                        </DataTemplate>
+                    </controls:DataGridTemplateColumn.CellTemplate>
+                </controls:DataGridTemplateColumn>
+
+                <!-- Ações -->
+                <controls:DataGridTemplateColumn Header="Ações" Width="70" MinWidth="60" IsReadOnly="True">
+                    <controls:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:PathDisplayModel">
+                            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Command="{Binding DataContext.DeletePathCommand, ElementName=SettingsPageRoot}"
+                                    CommandParameter="{Binding}"
+                                    Style="{ThemeResource SubtleButtonStyle}">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="#EF4444"/>
+                            </Button>
+                        </DataTemplate>
+                    </controls:DataGridTemplateColumn.CellTemplate>
+                </controls:DataGridTemplateColumn>
+            </controls:DataGrid.Columns>
+        </controls:DataGrid>
 
         <!-- Rodapé / Ações -->
         <Grid Grid.Row="3" ColumnSpacing="16">

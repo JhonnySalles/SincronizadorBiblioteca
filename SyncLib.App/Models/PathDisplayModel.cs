@@ -15,6 +15,11 @@ public partial class PathDisplayModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(StatusColor))]
     private string _path = string.Empty;
 
+    partial void OnPathChanged(string value)
+    {
+        CheckStatus();
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MediaTypeDisplayName))]
     private MediaType _mediaType;
