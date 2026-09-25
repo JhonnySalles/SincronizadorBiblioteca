@@ -4,3 +4,6 @@
 /SyncLib.Installer/obj/x64/Release
 /SyncLib.Installer/obj/Release
 /SyncLib.Installer/bin
+/SyncLib.Infrastructure/obj/Release
+/SyncLib.Installer/obj/x64/Debug
+/SyncLib.Core/obj/Release
