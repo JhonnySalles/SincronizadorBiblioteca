@@ -18,13 +18,63 @@ public class ProcessedFileNameResult
 
 public static class FileNameProcessor
 {
+    public static string CleanSeriesName(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+        string cleaned = input
+            .Replace("_", " - ")
+            .Replace(",", "")
+            .Replace("'", "")
+            .Replace("\"", "")
+            .Replace("’", "")
+            .Replace("‘", "")
+            .Replace("“", "")
+            .Replace("”", "");
+
+        cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
+        cleaned = Regex.Replace(cleaned, @"\s*-\s*", " - ").Trim(' ', '-');
+        return cleaned;
+    }
+
+    public static (string SeriesName, int? VolumeNumber) ExtractSeriesAndVolumeFromFinalFileName(string finalFileName)
+    {
+        if (string.IsNullOrWhiteSpace(finalFileName)) return (string.Empty, null);
+
+        string nameWithoutExt = Path.GetFileNameWithoutExtension(finalFileName);
+
+        // 1. Tenta encontrar pelo último traço antes do volume (ganância garante o último hífen)
+        var matchWithDash = Regex.Match(nameWithoutExt, @"^(?<series>.+)\s*-\s*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        if (matchWithDash.Success)
+        {
+            string series = CleanSeriesName(matchWithDash.Groups["series"].Value);
+            int? vol = int.TryParse(matchWithDash.Groups["vol"].Value, out int v) ? v : null;
+            return (series, vol);
+        }
+
+        // 2. Fallback para volume sem traço antes
+        var matchNoDash = Regex.Match(nameWithoutExt, @"^(?<series>.+?)\s+\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        if (matchNoDash.Success)
+        {
+            string series = CleanSeriesName(matchNoDash.Groups["series"].Value);
+            int? vol = int.TryParse(matchNoDash.Groups["vol"].Value, out int v) ? v : null;
+            return (series, vol);
+        }
+
+        // 3. Sem indicador de volume detectado
+        return (CleanSeriesName(nameWithoutExt), null);
+    }
+
     public static ProcessedFileNameResult Process(string originalFileName, MediaType mediaType, IEnumerable<NamingPattern>? savedPatterns = null, string? customSuffix = null)
     {
         string extension = Path.GetExtension(originalFileName);
         string nameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
 
-        // Regex para capturar a série e o número do volume (ex: Vol. 18, Vol 18, Volume 18)
-        var match = Regex.Match(nameWithoutExt, @"^(?<series>.+?)[,\s_]*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        // Regex para capturar a série e o número do volume (priorizando o último traço antes de Vol/Volume)
+        var matchWithDash = Regex.Match(nameWithoutExt, @"^(?<series>.+)\s*-\s*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        var matchGeneral = Regex.Match(nameWithoutExt, @"^(?<series>.+?)[,\s_]*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+
+        var match = matchWithDash.Success ? matchWithDash : matchGeneral;
 
         string seriesRaw;
         int? volumeNumber = null;
@@ -42,18 +92,7 @@ public static class FileNameProcessor
             seriesRaw = nameWithoutExt.Trim();
         }
 
-        string cleanedSeries = seriesRaw
-            .Replace("_", " - ")
-            .Replace(",", "")
-            .Replace("'", "")
-            .Replace("\"", "")
-            .Replace("’", "")
-            .Replace("‘", "")
-            .Replace("“", "")
-            .Replace("”", "");
-
-        cleanedSeries = Regex.Replace(cleanedSeries, @"\s+", " ").Trim();
-        cleanedSeries = Regex.Replace(cleanedSeries, @"\s*-\s*", " - ").Trim(' ', '-');
+        string cleanedSeries = CleanSeriesName(seriesRaw);
 
         string suffixPart = !string.IsNullOrWhiteSpace(customSuffix) ? $" {customSuffix.Trim()}" : string.Empty;
 
@@ -75,7 +114,9 @@ public static class FileNameProcessor
         if (pattern != null && !string.IsNullOrWhiteSpace(pattern.CustomTemplate))
         {
             finalName = ApplyTemplate(pattern.CustomTemplate, volumeNumber, suffixPart, extension);
-            finalSeriesName = ExtractSeriesFromFormatted(finalName, volumeNumber, extension, suffixPart);
+            finalName = CleanQuotes(finalName);
+            var extracted = ExtractSeriesAndVolumeFromFinalFileName(finalName);
+            finalSeriesName = extracted.SeriesName;
         }
         else
         {
@@ -112,24 +153,18 @@ public static class FileNameProcessor
         return result;
     }
 
-    private static string ExtractSeriesFromFormatted(string formattedFileName, int? volumeNumber, string extension, string customSuffixPart)
+    private static string CleanQuotes(string text)
     {
-        string name = Path.GetFileNameWithoutExtension(formattedFileName);
-        if (!string.IsNullOrEmpty(customSuffixPart) && name.EndsWith(customSuffixPart, StringComparison.OrdinalIgnoreCase))
-        {
-            name = name.Substring(0, name.Length - customSuffixPart.Length);
-        }
-
-        var match = Regex.Match(name, @"^(?<series>.+?)\s*(?:-\s*|[Vv]ol(?:ume)?\.?\s*)\d+", RegexOptions.IgnoreCase);
-        if (match.Success)
-        {
-            return match.Groups["series"].Value.Trim(' ', '-');
-        }
-
-        return name.Trim();
+        return text
+            .Replace("'", "")
+            .Replace("\"", "")
+            .Replace("’", "")
+            .Replace("‘", "")
+            .Replace("“", "")
+            .Replace("”", "");
     }
 
-    private static string Normalize(string input)
+    public static string Normalize(string input)
     {
         return Regex.Replace(input, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
     }

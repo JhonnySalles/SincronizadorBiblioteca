@@ -54,12 +54,13 @@
                               Grid.Column="1"/>
                 </Grid>
 
-                <!-- Linha 2: Descrição, Sufixo Arquivo, Sufixo Pasta, Sub-pastas e Botão Inserir -->
+                <!-- Linha 2: Descrição, Sufixo Arquivo, Sufixo Pasta, Extensões, Sub-pastas e Botão Inserir -->
                 <Grid ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="130" />
-                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="135" />
+                        <ColumnDefinition Width="135" />
+                        <ColumnDefinition Width="125" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -79,16 +80,22 @@
                              PlaceholderText="Ex: (Novel)"
                              Grid.Column="2"/>
 
+                    <TextBox Header="Extensões" 
+                             ToolTipService.ToolTip="Separado por vírgula"
+                             Text="{x:Bind ViewModel.InputAllowedExtensions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="Ex: .cbr, .cbz, epub"
+                             Grid.Column="3"/>
+
                     <CheckBox Content="Sub-pastas" 
                               IsChecked="{x:Bind ViewModel.InputIncludesSubfolders, Mode=TwoWay}"
-                              Grid.Column="3" 
+                              Grid.Column="4" 
                               VerticalAlignment="Bottom" 
                               Margin="0,0,0,6"/>
 
                     <Button Content="Inserir Caminho" 
                             Command="{x:Bind ViewModel.AddPathCommand}"
                             Style="{ThemeResource AccentButtonStyle}" 
-                            Grid.Column="4" 
+                            Grid.Column="5" 
                             VerticalAlignment="Bottom" 
                             Height="36"/>
                 </Grid>
@@ -144,23 +151,27 @@
                 </controls:DataGridTemplateColumn>
 
                 <!-- Descrição -->
-                <controls:DataGridTextColumn Header="Descrição" Tag="Description" Width="180" MinWidth="120" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Descrição" Tag="Description" Width="170" MinWidth="120" CanUserSort="True"
                                              Binding="{Binding Description, Mode=TwoWay}"/>
 
                 <!-- Sufixo Arquivo -->
-                <controls:DataGridTextColumn Header="Sufixo Arquivo" Tag="CustomSuffix" Width="130" MinWidth="90" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Sufixo Arquivo" Tag="CustomSuffix" Width="120" MinWidth="90" CanUserSort="True"
                                              Binding="{Binding CustomSuffix, Mode=TwoWay}"/>
 
                 <!-- Sufixo Pasta -->
-                <controls:DataGridTextColumn Header="Sufixo Pasta" Tag="CustomFolderSuffix" Width="130" MinWidth="90" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Sufixo Pasta" Tag="CustomFolderSuffix" Width="120" MinWidth="90" CanUserSort="True"
                                              Binding="{Binding CustomFolderSuffix, Mode=TwoWay}"/>
 
+                <!-- Extensões -->
+                <controls:DataGridTextColumn Header="Extensões" Tag="AllowedExtensions" Width="130" MinWidth="90" CanUserSort="True"
+                                             Binding="{Binding AllowedExtensions, Mode=TwoWay}"/>
+
                 <!-- Caminho -->
-                <controls:DataGridTextColumn Header="Caminho" Tag="Path" Width="*" MinWidth="200" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Caminho" Tag="Path" Width="*" MinWidth="180" CanUserSort="True"
                                              Binding="{Binding Path, Mode=TwoWay}"/>
 
                 <!-- Sub-pastas -->
-                <controls:DataGridCheckBoxColumn Header="Sub-pastas" Tag="IncludesSubfolders" Width="100" MinWidth="80" CanUserSort="True"
+                <controls:DataGridCheckBoxColumn Header="Sub-pastas" Tag="IncludesSubfolders" Width="95" MinWidth="75" CanUserSort="True"
                                                  Binding="{Binding IncludesSubfolders, Mode=TwoWay}"/>
 
                 <!-- Status -->

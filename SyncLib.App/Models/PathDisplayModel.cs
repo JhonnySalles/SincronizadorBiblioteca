@@ -36,6 +36,9 @@ public partial class PathDisplayModel : ObservableObject
     private string _customFolderSuffix = string.Empty;
 
     [ObservableProperty]
+    private string _allowedExtensions = string.Empty;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SubfoldersText))]
     private bool _includesSubfolders;
 
@@ -58,6 +61,7 @@ public partial class PathDisplayModel : ObservableObject
         _description = entity.Description;
         _customSuffix = entity.CustomSuffix;
         _customFolderSuffix = entity.CustomFolderSuffix;
+        _allowedExtensions = entity.AllowedExtensions;
         _includesSubfolders = entity.IncludesSubfolders;
         CheckStatus();
     }

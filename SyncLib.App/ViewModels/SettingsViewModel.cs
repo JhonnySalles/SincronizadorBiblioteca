@@ -28,6 +28,9 @@ public partial class SettingsViewModel : ObservableObject
     private string _inputCustomFolderSuffix = string.Empty;
 
     [ObservableProperty]
+    private string _inputAllowedExtensions = string.Empty;
+
+    [ObservableProperty]
     private bool _inputIncludesSubfolders;
 
     [ObservableProperty]
@@ -102,6 +105,7 @@ public partial class SettingsViewModel : ObservableObject
             Description = InputDescription.Trim(),
             CustomSuffix = InputCustomSuffix.Trim(),
             CustomFolderSuffix = InputCustomFolderSuffix.Trim(),
+            AllowedExtensions = InputAllowedExtensions.Trim(),
             IncludesSubfolders = InputIncludesSubfolders
         };
         model.CheckStatus();
@@ -113,6 +117,7 @@ public partial class SettingsViewModel : ObservableObject
         InputDescription = string.Empty;
         InputCustomSuffix = string.Empty;
         InputCustomFolderSuffix = string.Empty;
+        InputAllowedExtensions = string.Empty;
         InputIncludesSubfolders = false;
 
         StatusMessage = "Caminho inserido na lista (clique em Salvar para persistir no banco).";
@@ -149,6 +154,7 @@ public partial class SettingsViewModel : ObservableObject
                     Description = model.Description,
                     CustomSuffix = model.CustomSuffix,
                     CustomFolderSuffix = model.CustomFolderSuffix,
+                    AllowedExtensions = model.AllowedExtensions,
                     IncludesSubfolders = model.IncludesSubfolders
                 });
             }
@@ -182,6 +188,7 @@ public partial class SettingsViewModel : ObservableObject
             "Description" or "Descrição" => ascending ? ConfiguredPaths.OrderBy(p => p.Description).ToList() : ConfiguredPaths.OrderByDescending(p => p.Description).ToList(),
             "CustomSuffix" or "Sufixo Arquivo" => ascending ? ConfiguredPaths.OrderBy(p => p.CustomSuffix).ToList() : ConfiguredPaths.OrderByDescending(p => p.CustomSuffix).ToList(),
             "CustomFolderSuffix" or "Sufixo Pasta" => ascending ? ConfiguredPaths.OrderBy(p => p.CustomFolderSuffix).ToList() : ConfiguredPaths.OrderByDescending(p => p.CustomFolderSuffix).ToList(),
+            "AllowedExtensions" or "Extensões" => ascending ? ConfiguredPaths.OrderBy(p => p.AllowedExtensions).ToList() : ConfiguredPaths.OrderByDescending(p => p.AllowedExtensions).ToList(),
             "Path" or "Caminho" => ascending ? ConfiguredPaths.OrderBy(p => p.Path).ToList() : ConfiguredPaths.OrderByDescending(p => p.Path).ToList(),
             "IncludesSubfolders" or "Sub-pastas" => ascending ? ConfiguredPaths.OrderBy(p => p.IncludesSubfolders).ToList() : ConfiguredPaths.OrderByDescending(p => p.IncludesSubfolders).ToList(),
             "Status" or "StatusText" => ascending ? ConfiguredPaths.OrderBy(p => p.StatusText).ToList() : ConfiguredPaths.OrderByDescending(p => p.StatusText).ToList(),

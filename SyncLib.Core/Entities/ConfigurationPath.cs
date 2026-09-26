@@ -12,4 +12,5 @@ public class ConfigurationPath
     public string Description { get; set; } = string.Empty;
     public string CustomSuffix { get; set; } = string.Empty;
     public string CustomFolderSuffix { get; set; } = string.Empty;
+    public string AllowedExtensions { get; set; } = string.Empty;
 }

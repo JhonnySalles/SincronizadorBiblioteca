@@ -18,7 +18,48 @@ public sealed partial class MainWindow : Window
 
         AppWindow.SetIcon("Assets/WindowIcon.png");
 
+        this.SizeChanged += MainWindow_SizeChanged;
+        AppWindow.Changed += AppWindow_Changed;
+
         RestorePaneState();
+    }
+
+    private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+    {
+        if (args.DidPresenterChange || args.DidSizeChange)
+        {
+            TriggerLayoutRefresh();
+        }
+    }
+
+    private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
+    {
+        TriggerLayoutRefresh();
+    }
+
+    private void TriggerLayoutRefresh()
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            try
+            {
+                NavView?.InvalidateMeasure();
+                NavView?.InvalidateArrange();
+                NavView?.UpdateLayout();
+
+                RootFrame?.InvalidateMeasure();
+                RootFrame?.InvalidateArrange();
+                RootFrame?.UpdateLayout();
+
+                if (RootFrame?.Content is FrameworkElement page)
+                {
+                    page.InvalidateMeasure();
+                    page.InvalidateArrange();
+                    page.UpdateLayout();
+                }
+            }
+            catch { }
+        });
     }
 
     private static string PaneStateFilePath => System.IO.Path.Combine(
@@ -87,6 +128,10 @@ public sealed partial class MainWindow : Window
             {
                 NavigateTo(typeof(DashboardPage));
             }
+            else if (tag == "SyncPage")
+            {
+                NavigateTo(typeof(SyncPage));
+            }
         }
     }
 
@@ -102,6 +147,10 @@ public sealed partial class MainWindow : Window
             if (tag == "DashboardPage")
             {
                 NavigateTo(typeof(DashboardPage));
+            }
+            else if (tag == "SyncPage")
+            {
+                NavigateTo(typeof(SyncPage));
             }
         }
     }

@@ -27,6 +27,7 @@
         <NavigationView x:Name="NavView" Grid.Row="1" IsBackButtonVisible="Collapsed" ItemInvoked="NavView_ItemInvoked" SelectionChanged="NavView_SelectionChanged" Loaded="NavView_Loaded" PaneOpened="NavView_PaneOpened" PaneClosed="NavView_PaneClosed">
             <NavigationView.MenuItems>
                 <NavigationViewItem Icon="Home" Content="Geral" Tag="DashboardPage" />
+                <NavigationViewItem Icon="Sync" Content="Sincronização" Tag="SyncPage" />
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <!-- O item de configuração padrão também pode ser usado mas vamos forçar uma tag caso ele seja customizado -->

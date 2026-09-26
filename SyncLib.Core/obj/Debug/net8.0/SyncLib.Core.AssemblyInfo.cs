@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SyncLib.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+596843a2c4c8ae6e9d934b771073f80f968ba360")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0967aea4ac4bfd88631e89bb6de8909e6bb159a5")]
 [assembly: System.Reflection.AssemblyProductAttribute("SyncLib.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SyncLib.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

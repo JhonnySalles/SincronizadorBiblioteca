@@ -538,87 +538,11 @@ public partial class DashboardViewModel : ObservableObject
                     IsSubfoldersActive = dest.IncludesSubfolders,
                     VolumeNumber = processed.VolumeNumber,
                     OriginalRawSeries = processed.OriginalRawSeries,
-                    OriginalAutoFileName = processed.FormattedFileName
+                    OriginalAutoFileName = processed.FormattedFileName,
+                    FinalFileName = dest.IncludesSubfolders ? processed.FormattedFileName : fileName
                 };
 
-                if (!dest.IncludesSubfolders)
-                {
-                    item.FinalFileName = fileName;
-                    item.TargetDirectory = dest.Path;
-                    item.RowColor = "Transparent";
-                    item.StatusTooltip = "Cópia direta para a pasta de destino.";
-                }
-                else
-                {
-                    item.FinalFileName = processed.FormattedFileName;
-                    var matchedCache = FindMatchingDirectoryCache(dest.Path, processed.SeriesName, targetMediaType);
-
-                    if (matchedCache != null && Directory.Exists(matchedCache.FolderPath))
-                    {
-                        item.SeriesFolderName = matchedCache.SeriesName;
-                        item.TargetDirectory = matchedCache.FolderPath;
-
-                        if (processed.VolumeNumber.HasValue && processed.VolumeNumber.Value > 1)
-                        {
-                            int maxVol = GetMaxVolumeInFolderAndQueue(matchedCache.FolderPath, processed.SeriesName);
-                            if (maxVol > 0 && processed.VolumeNumber.Value > maxVol + 1)
-                            {
-                                item.RowColor = "#FFF97316"; // Amarelo
-                                item.StatusTooltip = $"Atenção: Pulo de volume! Último volume detectado é o {maxVol}, adicionando {processed.VolumeNumber.Value}.";
-                            }
-                            else if (maxVol == 0)
-                            {
-                                item.RowColor = "#FFF97316"; // Amarelo
-                                item.StatusTooltip = $"Atenção: Pasta vazia! Adicionando Volume {processed.VolumeNumber.Value} sem os anteriores.";
-                            }
-                            else
-                            {
-                                item.RowColor = "Transparent";
-                                item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
-                            }
-                        }
-                        else
-                        {
-                            item.RowColor = "Transparent";
-                            item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
-                        }
-                    }
-                    else
-                    {
-                        bool isEbook = targetMediaType == MediaType.EbookPortugues ||
-                                       targetMediaType == MediaType.EbookIngles ||
-                                       targetMediaType == MediaType.EbookJapones;
-
-                        string folderSuffix = !string.IsNullOrWhiteSpace(dest.CustomFolderSuffix)
-                            ? (dest.CustomFolderSuffix.StartsWith(" ") ? dest.CustomFolderSuffix : $" {dest.CustomFolderSuffix.Trim()}")
-                            : (isEbook && !processed.SeriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase) ? " (Novel)" : string.Empty);
-
-                        string baseSeriesName = processed.SeriesName;
-                        if (!string.IsNullOrEmpty(folderSuffix) && !baseSeriesName.EndsWith(folderSuffix.Trim(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            baseSeriesName = $"{baseSeriesName}{folderSuffix}";
-                        }
-
-                        var seriesFolderName = matchedCache != null 
-                            ? matchedCache.SeriesName 
-                            : baseSeriesName;
-
-                        item.SeriesFolderName = seriesFolderName;
-                        var proposedFolder = matchedCache != null ? matchedCache.FolderPath : Path.Combine(dest.Path, seriesFolderName);
-                        item.TargetDirectory = proposedFolder;
-
-                        if (processed.VolumeNumber == 1)
-                        {
-                            item.RowColor = "#FFF97316"; // Laranja
-                            item.StatusTooltip = $"Pasta da série não existe no destino. Será criada ao copiar: {proposedFolder}";
-                        }
-                        else
-                        {
-                            item.RowColor = "#EF4444"; // Vermelho
-                            item.StatusTooltip = $"Atenção: Pasta da série não encontrada no destino para Volume {processed.VolumeNumber}!";
-                        }
-                    }
-                }
+                EvaluateDestinationForItem(item, processed.SeriesName, processed.VolumeNumber, dest, targetMediaType);
 
                 AttachItemEvents(item);
                 PendingFiles.Add(item);
@@ -627,7 +551,130 @@ public partial class DashboardViewModel : ObservableObject
         }
     }
 
-    private int GetMaxVolumeInFolderAndQueue(string folderPath, string seriesName)
+    private void EvaluateDestinationForItem(FileItemModel item, string seriesName, int? volumeNumber, PathDisplayModel? destConfig, MediaType targetMediaType)
+    {
+        bool isSubfolders = destConfig != null ? destConfig.IncludesSubfolders : item.IsSubfoldersActive;
+        string destPath = destConfig != null ? destConfig.Path : item.DestinationFolder;
+        string? customFolderSuffix = destConfig?.CustomFolderSuffix;
+
+        item.IsSubfoldersActive = isSubfolders;
+        item.DestinationFolder = destPath;
+        item.VolumeNumber = volumeNumber;
+
+        if (!isSubfolders)
+        {
+            item.TargetDirectory = destPath;
+            item.RowColor = "Transparent";
+            item.StatusTooltip = "Cópia direta para a pasta de destino.";
+            return;
+        }
+
+        var matchedCache = FindMatchingDirectoryCache(destPath, seriesName, targetMediaType, customFolderSuffix);
+
+        if (matchedCache != null && Directory.Exists(matchedCache.FolderPath))
+        {
+            item.SeriesFolderName = matchedCache.SeriesName;
+            item.TargetDirectory = matchedCache.FolderPath;
+
+            if (volumeNumber.HasValue && volumeNumber.Value > 1)
+            {
+                int maxVol = GetMaxVolumeInFolderAndQueue(matchedCache.FolderPath, seriesName, item);
+                if (maxVol > 0 && volumeNumber.Value > maxVol + 1)
+                {
+                    item.RowColor = "#FFF97316"; // Amarelo
+                    item.StatusTooltip = $"Atenção: Pulo de volume! Último volume detectado é o {maxVol}, adicionando {volumeNumber.Value}.";
+                }
+                else if (maxVol == 0)
+                {
+                    item.RowColor = "#FFF97316"; // Amarelo
+                    item.StatusTooltip = $"Atenção: Pasta vazia! Adicionando Volume {volumeNumber.Value} sem os anteriores.";
+                }
+                else
+                {
+                    item.RowColor = "Transparent";
+                    item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
+                }
+            }
+            else
+            {
+                item.RowColor = "Transparent";
+                item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
+            }
+        }
+        else
+        {
+            bool isEbook = targetMediaType == MediaType.EbookPortugues ||
+                           targetMediaType == MediaType.EbookIngles ||
+                           targetMediaType == MediaType.EbookJapones;
+
+            string folderSuffix = !string.IsNullOrWhiteSpace(customFolderSuffix)
+                ? (customFolderSuffix.StartsWith(" ") ? customFolderSuffix : $" {customFolderSuffix.Trim()}")
+                : (isEbook && !seriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase) ? " (Novel)" : string.Empty);
+
+            string cleanSeries = FileNameProcessor.CleanSeriesName(seriesName);
+            string baseSeriesName = cleanSeries;
+            if (!string.IsNullOrEmpty(folderSuffix) && !baseSeriesName.EndsWith(folderSuffix.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                baseSeriesName = $"{baseSeriesName}{folderSuffix}";
+            }
+
+            item.SeriesFolderName = baseSeriesName;
+            var proposedFolder = Path.Combine(destPath, baseSeriesName);
+            item.TargetDirectory = proposedFolder;
+
+            if (volumeNumber == 1)
+            {
+                item.RowColor = "#FFF97316"; // Laranja
+                item.StatusTooltip = $"Pasta da série não existe no destino. Será criada ao copiar: {proposedFolder}";
+            }
+            else
+            {
+                item.RowColor = "#EF4444"; // Vermelho
+                item.StatusTooltip = $"Atenção: Pasta da série não encontrada no destino para Volume {volumeNumber}!";
+            }
+        }
+    }
+
+    [RelayCommand]
+    public void ReanalyzeFileItem(FileItemModel? item)
+    {
+        if (item == null) return;
+
+        var targetType = SelectedMediaTypeOption?.Type ?? MediaType.EbookPortugues;
+
+        // Encontra todos os itens na fila que correspondem ao mesmo arquivo de origem
+        var relatedItems = PendingFiles
+            .Where(p => string.Equals(p.FilePath, item.FilePath, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(p.FileName, item.FileName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (!relatedItems.Any())
+        {
+            relatedItems.Add(item);
+        }
+
+        int count = 0;
+        foreach (var rel in relatedItems)
+        {
+            // Extrai série e volume a partir do FinalFileName atual
+            var (extractedSeries, extractedVol) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(rel.FinalFileName);
+
+            rel.VolumeNumber = extractedVol;
+            if (!string.IsNullOrEmpty(extractedSeries))
+            {
+                rel.OriginalRawSeries = extractedSeries;
+            }
+
+            var destConfig = ConfiguredPaths.FirstOrDefault(p => p.Path.Equals(rel.DestinationFolder, StringComparison.OrdinalIgnoreCase));
+            EvaluateDestinationForItem(rel, extractedSeries, extractedVol, destConfig, targetType);
+
+            count++;
+        }
+
+        StatusMessage = $"Destino reanalisado para '{item.FileName}' ({count} destino(s)).";
+    }
+
+    private int GetMaxVolumeInFolderAndQueue(string folderPath, string seriesName, FileItemModel? currentItem = null)
     {
         int maxVol = 0;
 
@@ -651,7 +698,8 @@ public partial class DashboardViewModel : ObservableObject
 
         foreach (var pending in PendingFiles)
         {
-            if (pending.VolumeNumber.HasValue &&
+            if (pending != currentItem &&
+                pending.VolumeNumber.HasValue &&
                 string.Equals(pending.TargetDirectory, folderPath, StringComparison.OrdinalIgnoreCase))
             {
                 if (pending.VolumeNumber.Value > maxVol) maxVol = pending.VolumeNumber.Value;
@@ -666,16 +714,68 @@ public partial class DashboardViewModel : ObservableObject
         PendingFiles.Clear();
     }
 
-    private DirectoryCache? FindMatchingDirectoryCache(string rootPath, string seriesName, MediaType targetMediaType)
+    private string StripKnownFolderSuffixes(string folderName)
     {
-        string cleanTarget = NormalizeForComparison(seriesName);
+        string cleaned = folderName.Trim();
+        if (cleaned.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase))
+            cleaned = cleaned.Substring(0, cleaned.Length - "(Novel)".Length).Trim();
+        else if (cleaned.EndsWith("[Novel]", StringComparison.OrdinalIgnoreCase))
+            cleaned = cleaned.Substring(0, cleaned.Length - "[Novel]".Length).Trim();
+        return cleaned;
+    }
 
-        // 1. Busca no cache pelo RootPath e MediaType especificados
+    private bool IsDirectoryMatch(string folderName, string seriesName, string? customFolderSuffix, MediaType targetMediaType)
+    {
+        string normSeries = NormalizeForComparison(seriesName);
+        string normFolder = NormalizeForComparison(folderName);
+
+        if (string.IsNullOrEmpty(normSeries) || string.IsNullOrEmpty(normFolder)) return false;
+
+        // Nível 1: Igualdade exata normalizada
+        if (normFolder == normSeries) return true;
+
+        // Nível 1.1: Igualdade removendo sufixos padrão conhecidos da pasta
+        string folderWithoutSuffix = StripKnownFolderSuffixes(folderName);
+        string normFolderWithoutSuffix = NormalizeForComparison(folderWithoutSuffix);
+        if (normFolderWithoutSuffix == normSeries) return true;
+
+        if (!string.IsNullOrWhiteSpace(customFolderSuffix))
+        {
+            string normSeriesWithCustom = NormalizeForComparison($"{seriesName}{customFolderSuffix.Trim()}");
+            if (normFolder == normSeriesWithCustom) return true;
+        }
+
+        bool isEbook = targetMediaType == MediaType.EbookPortugues ||
+                       targetMediaType == MediaType.EbookIngles ||
+                       targetMediaType == MediaType.EbookJapones;
+
+        if (isEbook)
+        {
+            string normSeriesWithNovel = NormalizeForComparison($"{seriesName} (Novel)");
+            if (normFolder == normSeriesWithNovel) return true;
+        }
+
+        // Nível 2: Correspondência por Prefixo (StartsWith) - para séries onde a pasta é o início do título longo
+        if (normFolderWithoutSuffix.Length >= 6)
+        {
+            if (normSeries.StartsWith(normFolderWithoutSuffix, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (normFolderWithoutSuffix.StartsWith(normSeries, StringComparison.OrdinalIgnoreCase) && normSeries.Length >= 6)
+                return true;
+        }
+
+        return false;
+    }
+
+    private DirectoryCache? FindMatchingDirectoryCache(string rootPath, string seriesName, MediaType targetMediaType, string? customFolderSuffix = null)
+    {
+        if (string.IsNullOrWhiteSpace(seriesName)) return null;
+
+        // 1. Busca no cache pelo RootPath e MediaType especificados com matching estrito
         var match = _inMemoryDirectoryCache.FirstOrDefault(c =>
             c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
             c.MediaType == targetMediaType &&
-            (NormalizeForComparison(c.SeriesName).Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
-             cleanTarget.Contains(NormalizeForComparison(c.SeriesName), StringComparison.OrdinalIgnoreCase)));
+            IsDirectoryMatch(c.SeriesName, seriesName, customFolderSuffix, targetMediaType));
 
         // 2. Fallback de Disco na pasta raiz desta biblioteca específica
         if (match == null && Directory.Exists(rootPath))
@@ -686,10 +786,8 @@ public partial class DashboardViewModel : ObservableObject
                 foreach (var dir in subdirs)
                 {
                     var folderName = Path.GetFileName(dir);
-                    string cleanFolder = NormalizeForComparison(folderName);
 
-                    if (cleanFolder.Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
-                        cleanTarget.Contains(cleanFolder, StringComparison.OrdinalIgnoreCase))
+                    if (IsDirectoryMatch(folderName, seriesName, customFolderSuffix, targetMediaType))
                     {
                         match = new DirectoryCache
                         {

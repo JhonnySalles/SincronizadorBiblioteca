@@ -105,6 +105,14 @@ public sealed partial class DashboardPage : Page
         }
     }
 
+    private void ReanalyzeFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is SyncLib.App.Models.FileItemModel item)
+        {
+            ViewModel.ReanalyzeFileItemCommand.Execute(item);
+        }
+    }
+
     private void RemoveFile_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button button && button.DataContext is SyncLib.App.Models.FileItemModel item)
