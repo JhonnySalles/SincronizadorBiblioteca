@@ -11,6 +11,14 @@ public class AppDbContext : DbContext
     public DbSet<DirectoryCache> DirectoryCaches { get; set; } = null!;
     public DbSet<NamingPattern> NamingPatterns { get; set; } = null!;
 
+    public AppDbContext()
+    {
+    }
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
+
     public static string DbPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SyncLib",

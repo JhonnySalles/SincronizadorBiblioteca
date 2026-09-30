@@ -58,11 +58,30 @@ build_release.bat
 
 ---
 
+## 🧪 Testes Automatizados
+
+O projeto conta com o pacote de testes automatizados **`SyncLib.Tests`** (xUnit + FluentAssertions + Moq + EF Core InMemory), cobrindo regras de negócio de processamento de nomes, templates, extensões suportadas, logs de cópia e persistência do banco de dados.
+
+Para executar todos os testes automatizados, utilize o script `test.bat` na raiz do projeto:
+
+```bat
+test.bat
+```
+
+Ou execute diretamente via CLI do .NET:
+
+```bash
+dotnet test SyncLib.Tests/SyncLib.Tests.csproj
+```
+
+---
+
 ## 📁 Estrutura do Projeto
 
 * `SyncLib.App`: Projeto UI principal (WinUI 3). Responsável pelas telas (`MainWindow`, `DashboardPage`, `SettingsPage`) e ViewModels.
-* `SyncLib.Core`: Camada de domínio contendo os modelos lógicos e contratos.
-* `SyncLib.Infrastructure`: Implementações de banco de dados (`AppDbContext`), leitura de diretórios e extração Regex.
+* `SyncLib.Core`: Camada de domínio contendo os modelos lógicos, entidades, enums e helpers de processamento.
+* `SyncLib.Infrastructure`: Implementações de banco de dados (`AppDbContext`), persistência SQLite e migrações.
+* `SyncLib.Tests`: Suíte centralizada de testes automatizados unitários e de integração.
 * `SyncLib.Installer`: Projeto WiX 4 contendo a lógica de empacotamento, registro de atalhos de menu iniciar e desktop para gerar o MSI.
 
 ---

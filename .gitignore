@@ -7,3 +7,7 @@
 /SyncLib.Infrastructure/obj/Release
 /SyncLib.Installer/obj/x64/Debug
 /SyncLib.Core/obj/Release
+/SyncLib.Tests/obj/Debug
+/SyncLib.Tests/bin
+/SyncLib.Infrastructure/obj/Debug
+/SyncLib.Infrastructure/bin

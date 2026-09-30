@@ -166,6 +166,7 @@ public static class FileNameProcessor
 
     public static string Normalize(string input)
     {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
         return Regex.Replace(input, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
     }
 }
