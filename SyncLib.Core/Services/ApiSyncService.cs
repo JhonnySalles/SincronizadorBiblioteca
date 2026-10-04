@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using SyncLib.Core.Models.Api;
 
@@ -16,17 +19,141 @@ public class ApiSyncService
     
     // Configurable base URL, defaults to localhost:8083 as seen in application.yml
     public string BaseUrl { get; set; } = "http://localhost:8083";
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string? AccessToken { get; private set; }
+
+    private static string SettingsFilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SyncLib",
+        "api_settings.json"
+    );
 
     public ApiSyncService()
     {
         _httpClient = new HttpClient();
+        LoadSettings();
     }
 
-    public async Task<bool> IsApiOnlineAsync()
+    public void LoadSettings()
     {
         try
         {
-            var response = await _httpClient.GetAsync($"{BaseUrl}/health");
+            if (File.Exists(SettingsFilePath))
+            {
+                var json = File.ReadAllText(SettingsFilePath);
+                var config = JsonSerializer.Deserialize<ApiSettingsData>(json);
+                if (config != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(config.BaseUrl)) BaseUrl = config.BaseUrl;
+                    if (!string.IsNullOrWhiteSpace(config.Username)) Username = config.Username;
+                    if (!string.IsNullOrWhiteSpace(config.Password)) Password = config.Password;
+                }
+            }
+        }
+        catch { }
+    }
+
+    public void SaveSettings(string username, string password, string? baseUrl = null)
+    {
+        try
+        {
+            Username = username ?? string.Empty;
+            Password = password ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(baseUrl)) BaseUrl = baseUrl;
+
+            var dir = Path.GetDirectoryName(SettingsFilePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var config = new ApiSettingsData
+            {
+                BaseUrl = BaseUrl,
+                Username = Username,
+                Password = Password
+            };
+
+            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(SettingsFilePath, json);
+        }
+        catch { }
+    }
+
+    public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
+    public string? LastAuthError { get; private set; }
+
+    public async Task<bool> AuthenticateAsync(string? username = null, string? password = null)
+    {
+        if (username != null) Username = username;
+        if (password != null) Password = password;
+
+        if (string.IsNullOrWhiteSpace(Username))
+        {
+            AccessToken = null;
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            LastAuthError = "Usuário não informado.";
+            return false;
+        }
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var cred = new CredencialDto
+            {
+                Username = Username.Trim(),
+                Password = Password ?? string.Empty
+            };
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var jsonContent = new StringContent(
+                JsonSerializer.Serialize(cred, options),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Rota oficial documentada no Swagger/OpenAPI: /auth/signin
+            var response = await _httpClient.PostAsync($"{BaseUrl}/auth/signin", jsonContent, cts.Token);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var contentStr = await response.Content.ReadAsStringAsync(cts.Token);
+                var tokenDto = JsonSerializer.Deserialize<TokenDto>(contentStr, options);
+                if (tokenDto != null && !string.IsNullOrEmpty(tokenDto.AccessToken))
+                {
+                    AccessToken = tokenDto.AccessToken;
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
+                    LastAuthError = null;
+                    return true;
+                }
+            }
+            else
+            {
+                var errContent = await response.Content.ReadAsStringAsync(cts.Token);
+                LastAuthError = $"Falha na autenticação (Status {(int)response.StatusCode}): {errContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            LastAuthError = $"Erro ao conectar ao endpoint de login: {ex.Message}";
+        }
+
+        AccessToken = null;
+        _httpClient.DefaultRequestHeaders.Authorization = null;
+        return false;
+    }
+
+    public async Task<bool> IsApiOnlineAsync(int timeoutSeconds = 3)
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            var response = await _httpClient.GetAsync($"{BaseUrl}/health", cts.Token);
             return response.IsSuccessStatusCode;
         }
         catch
@@ -35,8 +162,24 @@ public class ApiSyncService
         }
     }
 
+    private class ApiSettingsData
+    {
+        public string BaseUrl { get; set; } = "http://localhost:8083";
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
     public async Task<string> CheckFileStatusAsync(string filePath, string fileName, string mediaType)
     {
+        if (!IsAuthenticated)
+        {
+            var auth = await AuthenticateAsync();
+            if (!auth)
+            {
+                return "Não Autenticado";
+            }
+        }
+
         try
         {
             if (string.Equals(mediaType, "Livro", StringComparison.OrdinalIgnoreCase))

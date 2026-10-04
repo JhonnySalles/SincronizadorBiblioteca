@@ -1,21 +1,36 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SyncLib.Core.Models.Api;
 
 public class CredencialDto
 {
+    [JsonPropertyName("username")]
     public string Username { get; set; } = string.Empty;
+
+    [JsonPropertyName("password")]
     public string Password { get; set; } = string.Empty;
 }
 
 public class TokenDto
 {
+    [JsonPropertyName("username")]
     public string Username { get; set; } = string.Empty;
+
+    [JsonPropertyName("authenticated")]
     public bool Authenticated { get; set; }
+
+    [JsonPropertyName("created")]
     public DateTime Created { get; set; }
+
+    [JsonPropertyName("expiration")]
     public DateTime Expiration { get; set; }
+
+    [JsonPropertyName("accessToken")]
     public string AccessToken { get; set; } = string.Empty;
+
+    [JsonPropertyName("refreshToken")]
     public string RefreshToken { get; set; } = string.Empty;
 }
 

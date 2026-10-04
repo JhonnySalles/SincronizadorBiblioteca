@@ -18,6 +18,31 @@ public sealed partial class ApiSyncPage : Page
         this.InitializeComponent();
     }
 
+    private void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (ApiPasswordBox != null && !string.IsNullOrEmpty(ViewModel.ApiPassword))
+        {
+            ApiPasswordBox.Password = ViewModel.ApiPassword;
+        }
+    }
+
+    private void ApiPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (sender is PasswordBox pb)
+        {
+            ViewModel.ApiPassword = pb.Password;
+        }
+    }
+
+    private async void SearchPath_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            e.Handled = true;
+            await ViewModel.AnalyzeFolderAsync();
+        }
+    }
+
     private async void BrowseFolder_Click(object sender, RoutedEventArgs e)
     {
         var picker = new FolderPicker();

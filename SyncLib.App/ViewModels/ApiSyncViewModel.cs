@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml;
 using SyncLib.App.Models;
 using SyncLib.Core.Services;
 
@@ -17,6 +18,12 @@ public partial class ApiSyncViewModel : ObservableObject
 
     [ObservableProperty]
     private string _searchPath = string.Empty;
+
+    [ObservableProperty]
+    private string _apiUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _apiPassword = string.Empty;
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
@@ -31,6 +38,9 @@ public partial class ApiSyncViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
+    private bool _isNotBusy = true;
+
+    [ObservableProperty]
     private bool _isAnalyzing;
 
     [ObservableProperty]
@@ -40,42 +50,99 @@ public partial class ApiSyncViewModel : ObservableObject
     private bool _isApiOnline;
 
     [ObservableProperty]
+    private bool _isApiAuthenticated;
+
+    [ObservableProperty]
+    private string _apiStatusButtonText = "Status da API";
+
+    [ObservableProperty]
     private string _apiStatusTooltip = "Verificando API...";
 
     [ObservableProperty]
     private string _apiStatusColor = "#888888";
 
+    [ObservableProperty]
+    private Visibility _placeholderVisibility = Visibility.Visible;
+
     public ObservableCollection<ApiSyncItemModel> Items { get; } = new();
 
     public ApiSyncViewModel()
     {
+        ApiUsername = _apiSyncService.Username;
+        ApiPassword = _apiSyncService.Password;
+        _ = CheckApiStatusAsync();
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        IsNotBusy = !value;
+    }
+
+    partial void OnApiUsernameChanged(string value)
+    {
+        _apiSyncService.SaveSettings(value, ApiPassword);
+        _ = CheckApiStatusAsync();
+    }
+
+    partial void OnApiPasswordChanged(string value)
+    {
+        _apiSyncService.SaveSettings(ApiUsername, value);
         _ = CheckApiStatusAsync();
     }
 
     [RelayCommand]
     public async Task CheckApiStatusAsync()
     {
-        ApiStatusTooltip = "Verificando API...";
-        IsApiOnline = await _apiSyncService.IsApiOnlineAsync();
+        ApiStatusTooltip = "Verificando conexão com a API...";
+        ApiStatusButtonText = "Verificando...";
+        ApiStatusColor = "#888888";
+        StatusMessage = $"Verificando conexão com a API em {_apiSyncService.BaseUrl}...";
+
+        IsApiOnline = await _apiSyncService.IsApiOnlineAsync(3);
 
         if (IsApiOnline)
         {
-            ApiStatusTooltip = "API Online";
-            ApiStatusColor = "#22C55E";
+            IsApiAuthenticated = false;
+            if (!string.IsNullOrWhiteSpace(ApiUsername))
+            {
+                IsApiAuthenticated = await _apiSyncService.AuthenticateAsync(ApiUsername, ApiPassword);
+            }
+
+            if (IsApiAuthenticated)
+            {
+                ApiStatusButtonText = "API Online";
+                ApiStatusTooltip = $"API Online e Autenticada ({_apiSyncService.BaseUrl})";
+                ApiStatusColor = "#22C55E"; // Verde
+                StatusMessage = $"API Online e autenticada com sucesso ({_apiSyncService.BaseUrl})!";
+            }
+            else
+            {
+                ApiStatusButtonText = "Não Autenticada";
+                var errorMsg = !string.IsNullOrWhiteSpace(_apiSyncService.LastAuthError) 
+                    ? _apiSyncService.LastAuthError 
+                    : "Informe usuário e senha válidos.";
+                ApiStatusTooltip = $"API Online em {_apiSyncService.BaseUrl}, mas a autenticação falhou: {errorMsg}";
+                ApiStatusColor = "#F59E0B"; // Laranja
+                StatusMessage = $"API Online em {_apiSyncService.BaseUrl}, mas a autenticação falhou: {errorMsg}";
+            }
         }
         else
         {
-            ApiStatusTooltip = "API Offline";
-            ApiStatusColor = "#EF4444";
+            IsApiAuthenticated = false;
+            ApiStatusButtonText = "API Offline";
+            ApiStatusTooltip = $"API Offline - Não respondeu em {_apiSyncService.BaseUrl}";
+            ApiStatusColor = "#EF4444"; // Vermelho
+            StatusMessage = $"API Offline! Não foi possível conectar ao servidor em {_apiSyncService.BaseUrl}.";
         }
     }
 
     [RelayCommand]
     public async Task AnalyzeFolderAsync()
     {
-        if (string.IsNullOrWhiteSpace(SearchPath) || !Directory.Exists(SearchPath))
+        var cleanPath = SearchPath?.Trim(' ', '"', '\'') ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(cleanPath) || !Directory.Exists(cleanPath))
         {
-            StatusMessage = "Selecione ou digite um diretório válido.";
+            StatusMessage = "Selecione ou digite um diretório válido existente.";
             return;
         }
 
@@ -83,6 +150,7 @@ public partial class ApiSyncViewModel : ObservableObject
         IsAnalyzing = true;
         StatusMessage = "Buscando arquivos na pasta...";
         Items.Clear();
+        PlaceholderVisibility = Visibility.Visible;
 
         try
         {
@@ -93,25 +161,42 @@ public partial class ApiSyncViewModel : ObservableObject
 
             var files = await Task.Run(() =>
             {
-                try
+                var found = new List<string>();
+                var queue = new Queue<string>();
+                queue.Enqueue(cleanPath);
+
+                while (queue.Count > 0)
                 {
-                    return Directory.EnumerateFiles(SearchPath, "*.*", SearchOption.AllDirectories)
-                        .Where(f => allowedExtensions.Contains(Path.GetExtension(f)))
-                        .ToList();
+                    var currentDir = queue.Dequeue();
+                    try
+                    {
+                        foreach (var subDir in Directory.EnumerateDirectories(currentDir))
+                        {
+                            queue.Enqueue(subDir);
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        foreach (var f in Directory.EnumerateFiles(currentDir, "*.*", SearchOption.TopDirectoryOnly))
+                        {
+                            if (allowedExtensions.Contains(Path.GetExtension(f)))
+                            {
+                                found.Add(f);
+                            }
+                        }
+                    }
+                    catch { }
                 }
-                catch
-                {
-                    return Directory.EnumerateFiles(SearchPath, "*.*", SearchOption.TopDirectoryOnly)
-                        .Where(f => allowedExtensions.Contains(Path.GetExtension(f)))
-                        .ToList();
-                }
+
+                return found;
             });
 
             if (files.Count == 0)
             {
-                StatusMessage = "Nenhum arquivo de Mangá ou Livro (.cbz, .epub, .zip, .cbr) encontrado.";
-                IsBusy = false;
-                IsAnalyzing = false;
+                StatusMessage = "Nenhum arquivo de Mangá ou Livro (.cbz, .epub, .zip, .cbr) encontrado no diretório.";
+                PlaceholderVisibility = Visibility.Visible;
                 return;
             }
 
@@ -132,22 +217,32 @@ public partial class ApiSyncViewModel : ObservableObject
                 Items.Add(item);
             }
 
+            PlaceholderVisibility = Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
             StatusMessage = $"Encontrados {Items.Count} arquivos. Verificando situação na API...";
             await CheckApiStatusAsync();
 
             if (!IsApiOnline)
             {
-                StatusMessage = $"{Items.Count} arquivos carregados. Atenção: API está offline.";
+                StatusMessage = $"{Items.Count} arquivo(s) carregados da pasta. Atenção: A API está Offline.";
                 foreach (var it in Items)
                 {
                     it.SetStatus("Offline", "API não acessível.");
                 }
-                IsBusy = false;
-                IsAnalyzing = false;
                 return;
             }
 
-            // Checagem na API
+            if (!IsApiAuthenticated)
+            {
+                StatusMessage = $"{Items.Count} arquivo(s) carregados da pasta. Atenção: Autenticação pendente na API. Informe usuário e senha válidos.";
+                foreach (var it in Items)
+                {
+                    it.SetStatus("Não Autenticado", "Faça login com usuário e senha para consultar a API.");
+                }
+                return;
+            }
+
+            // Checagem na API quando online E autenticada
             int checkedCount = 0;
             ProcessTotal = Items.Count;
             ProcessProgress = 0;
@@ -192,6 +287,12 @@ public partial class ApiSyncViewModel : ObservableObject
         if (!IsApiOnline)
         {
             StatusMessage = "Não é possível processar: a API está Offline.";
+            return;
+        }
+
+        if (!IsApiAuthenticated)
+        {
+            StatusMessage = "Não é possível processar: Autenticação obrigatória. Verifique o usuário e senha da API.";
             return;
         }
 

@@ -39,12 +39,13 @@ public partial class ApiSyncItemModel : ObservableObject
 
         StatusColor = status switch
         {
-            "Novo" => "#3B82F6",         // Azul
-            "Atualizar" => "#F59E0B",    // Amarelo/Laranja
-            "Sincronizado" => "#22C55E", // Verde
+            "Novo" => "#3B82F6",             // Azul
+            "Atualizar" => "#F59E0B",        // Amarelo/Laranja
+            "Não Autenticado" => "#F59E0B",  // Laranja
+            "Sincronizado" => "#22C55E",     // Verde
             "Sincronizando..." => "#A855F7", // Roxo
-            "Erro" => "#EF4444",         // Vermelho
-            _ => "#888888"               // Cinza
+            "Erro" or "Offline" => "#EF4444", // Vermelho
+            _ => "#888888"                   // Cinza
         };
     }
 }

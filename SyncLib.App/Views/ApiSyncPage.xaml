@@ -11,6 +11,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:primitives="using:CommunityToolkit.WinUI.UI.Controls.Primitives"
     mc:Ignorable="d"
+    Loaded="Page_Loaded"
     Background="Transparent">
 
     <Page.Resources>
@@ -45,12 +46,12 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
-                    Padding="12,6">
+                    Padding="14,8">
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <Ellipse Width="10" Height="10" 
                              Fill="{x:Bind ViewModel.ApiStatusColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}" 
                              VerticalAlignment="Center"/>
-                    <TextBlock Text="Status da API" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="12"/>
+                    <TextBlock Text="{x:Bind ViewModel.ApiStatusButtonText, Mode=OneWay}" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
                 </StackPanel>
             </Button>
         </Grid>
@@ -67,6 +68,7 @@
 
                 <TextBox Header="Pasta para Análise de Metadados" 
                          Text="{x:Bind ViewModel.SearchPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                         KeyDown="SearchPath_KeyDown"
                          PlaceholderText="Selecione ou cole o caminho da pasta contendo Mangás ou Livros..."
                          Grid.Column="0"/>
 
@@ -78,7 +80,7 @@
 
                 <Button Command="{x:Bind ViewModel.AnalyzeFolderCommand}" 
                         Style="{ThemeResource AccentButtonStyle}"
-                        IsEnabled="{x:Bind ViewModel.IsBusy, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}"
+                        IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
                         VerticalAlignment="Bottom"
                         Height="36"
                         Grid.Column="2">
@@ -189,7 +191,7 @@
 
             <!-- Dica Visual quando a lista estiver vazia -->
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsHitTestVisible="False"
-                        Visibility="{x:Bind ViewModel.Items.Count, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}">
+                        Visibility="{x:Bind ViewModel.PlaceholderVisibility, Mode=OneWay}">
                 <FontIcon Glyph="&#xE838;" FontSize="36" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                 <TextBlock Text="Informe uma pasta acima ou arraste uma pasta para este painel" 
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" 
@@ -198,35 +200,63 @@
         </Grid>
 
         <!-- 4. Rodapé e Botões de Ação -->
-        <Grid Grid.Row="3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Grid Grid.Row="3" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
+            <!-- Linha 1 do Rodapé: Credenciais à esquerda e Ações à direita -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Canto Esquerdo: Login e Senha na API -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Bottom">
+                    <TextBox x:Name="ApiUsernameBox" 
+                             Header="Usuário API" 
+                             Width="160" 
+                             Text="{x:Bind ViewModel.ApiUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="Login na API..." />
+
+                    <PasswordBox x:Name="ApiPasswordBox" 
+                                 Header="Senha API" 
+                                 Width="160" 
+                                 PasswordChanged="ApiPasswordBox_PasswordChanged" 
+                                 PlaceholderText="Senha na API..." />
+                </StackPanel>
+
+                <!-- Canto Direito: Botões de Ação -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Bottom">
+                    <Button Content="Marcar Todos" Click="SelectAll_Click" Height="36" />
+                    <Button Content="Desmarcar Todos" Click="UnselectAll_Click" Height="36" />
+                    
+                    <Button Command="{x:Bind ViewModel.ProcessCommand}" 
+                            IsEnabled="{x:Bind ViewModel.IsNotBusy, Mode=OneWay}"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            Height="36">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE896;" FontSize="14"/>
+                            <TextBlock Text="Processar"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Linha 2 do Rodapé: Mensagem de Status e Barra de Progresso -->
+            <StackPanel Grid.Row="1" Spacing="4">
                 <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
-                           Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" />
+                           Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" 
+                           FontSize="12" />
                 <ProgressBar Minimum="0" 
                              Maximum="{x:Bind ViewModel.ProcessTotal, Mode=OneWay}" 
                              Value="{x:Bind ViewModel.ProcessProgress, Mode=OneWay}" 
                              Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" 
                              Height="4" 
                              HorizontalAlignment="Stretch"/>
-            </StackPanel>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                <Button Content="Marcar Todos" Click="SelectAll_Click" />
-                <Button Content="Desmarcar Todos" Click="UnselectAll_Click" />
-                
-                <Button Command="{x:Bind ViewModel.ProcessCommand}" 
-                        IsEnabled="{x:Bind ViewModel.IsBusy, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}"
-                        Style="{ThemeResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE896;" FontSize="14"/>
-                        <TextBlock Text="Processar"/>
-                    </StackPanel>
-                </Button>
             </StackPanel>
         </Grid>
     </Grid>

@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj": {}
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj": {}
   },
   "projects": {
-    "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
+        "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
         "projectName": "SyncLib.Core",
-        "projectPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
-        "packagesPath": "C:\\Users\\Jhonny\\.nuget\\packages\\",
-        "outputPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\obj\\",
+        "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
+        "packagesPath": "F:\\Caches\\NuGet\\packages",
+        "outputPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
           "C:\\Users\\Jhonny\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -66,21 +66,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.317/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
+        "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
         "projectName": "SyncLib.Infrastructure",
-        "projectPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\Jhonny\\.nuget\\packages\\",
-        "outputPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\obj\\",
+        "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
+        "packagesPath": "F:\\Caches\\NuGet\\packages",
+        "outputPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
           "C:\\Users\\Jhonny\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -99,8 +99,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
-                "projectPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj"
+              "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
+                "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj"
               }
             }
           }
@@ -152,21 +152,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.317/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj": {
+    "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj",
+        "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj",
         "projectName": "SyncLib.Tests",
-        "projectPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj",
-        "packagesPath": "C:\\Users\\Jhonny\\.nuget\\packages\\",
-        "outputPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\obj\\",
+        "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj",
+        "packagesPath": "F:\\Caches\\NuGet\\packages",
+        "outputPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "D:\\Arquivos de programas\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
           "C:\\Users\\Jhonny\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -185,11 +185,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
-                "projectPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj"
+              "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
+                "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj"
               },
-              "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
-                "projectPath": "D:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj"
+              "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
+                "projectPath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj"
               }
             }
           }
@@ -255,7 +255,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.317/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
