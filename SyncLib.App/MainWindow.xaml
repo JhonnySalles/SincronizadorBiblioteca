@@ -28,6 +28,7 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Icon="Home" Content="Geral" Tag="DashboardPage" />
                 <NavigationViewItem Icon="Sync" Content="Sincronização" Tag="SyncPage" />
+                <NavigationViewItem Icon="CloudUpload" Content="API Sincronização" Tag="ApiSyncPage" />
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <!-- O item de configuração padrão também pode ser usado mas vamos forçar uma tag caso ele seja customizado -->

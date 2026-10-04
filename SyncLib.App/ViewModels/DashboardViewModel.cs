@@ -63,6 +63,16 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCopying;
 
+    [ObservableProperty]
+    private bool _isApiOnline;
+
+    [ObservableProperty]
+    private string _apiStatusTooltip = "Verificando API...";
+
+    [ObservableProperty]
+    private string _apiStatusColor = "#888888";
+
+    private readonly SyncLib.Core.Services.ApiSyncService _apiSyncService = new();
     private readonly List<NamingPattern> _namingPatterns = new();
     private bool _isSyncingFinalName;
 
@@ -226,9 +236,28 @@ public partial class DashboardViewModel : ObservableObject
 
     private async Task InitializeDashboardAsync()
     {
+        await CheckApiStatusAsync();
         await LoadConfiguredPathsAsync();
         await EnsureDirectoryCacheAsync();
         await LoadNamingPatternsAsync();
+    }
+
+    [RelayCommand]
+    private async Task CheckApiStatusAsync()
+    {
+        ApiStatusTooltip = "Verificando API...";
+        IsApiOnline = await _apiSyncService.IsApiOnlineAsync();
+        
+        if (IsApiOnline)
+        {
+            ApiStatusTooltip = "API Online";
+            ApiStatusColor = "#22C55E"; // Green
+        }
+        else
+        {
+            ApiStatusTooltip = "API Offline";
+            ApiStatusColor = "#EF4444"; // Red
+        }
     }
 
     private async Task LoadNamingPatternsAsync()
@@ -976,6 +1005,30 @@ public partial class DashboardViewModel : ObservableObject
                 // Registra no log de cópia para rastreabilidade
                 CopyLogger.LogCopy(item.FilePath, item.MediaTypeDisplayName, item.FinalFileName, item.TargetDirectory);
 
+                if (IsApiOnline)
+                {
+                    StatusMessage = $"Sincronizando com a API: {item.FinalFileName}...";
+                    try 
+                    {
+                        string lang = item.MediaTypeDisplayName.Contains("PORTUGUÊS", StringComparison.OrdinalIgnoreCase) ? "pt" :
+                                      item.MediaTypeDisplayName.Contains("INGLÊS", StringComparison.OrdinalIgnoreCase) ? "en" :
+                                      item.MediaTypeDisplayName.Contains("JAPONÊS", StringComparison.OrdinalIgnoreCase) ? "ja" : "pt";
+
+                        if (item.MediaTypeDisplayName.Contains("EBOOK", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await _apiSyncService.SyncEpubAsync(destFilePath, item.FinalFileName, lang);
+                        }
+                        else 
+                        {
+                            await _apiSyncService.SyncComicAsync(destFilePath, item.FinalFileName, lang);
+                        }
+                    }
+                    catch (Exception apiEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Erro na API: {apiEx.Message}");
+                    }
+                }
+
                 item.CopiedFilePath = destFilePath;
                 item.IsCopied = true;
                 item.RowColor = "Transparent";
@@ -985,7 +1038,7 @@ public partial class DashboardViewModel : ObservableObject
             {
                 errorCount++;
                 item.RowColor = "#EF4444";
-                item.StatusTooltip = $"Erro ao copiar: {ex.Message}";
+                item.StatusTooltip = $"Erro: {ex.Message}";
             }
 
             CopyProgress = copiedCount + errorCount;
@@ -995,11 +1048,11 @@ public partial class DashboardViewModel : ObservableObject
 
         if (errorCount == 0)
         {
-            StatusMessage = $"Cópia concluída com sucesso! ({copiedCount} arquivo(s) copiados).";
+            StatusMessage = $"Cópia concluída com sucesso! ({copiedCount} arquivo(s) copiados). {(IsApiOnline ? "API Sincronizada." : "API Offline.")}";
         }
         else
         {
-            StatusMessage = $"{copiedCount} arquivo(s) copiados com sucesso. {errorCount} falharam.";
+            StatusMessage = $"{copiedCount} arquivo(s) copiados. {errorCount} falharam.";
         }
     }
 

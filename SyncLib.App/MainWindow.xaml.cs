@@ -132,6 +132,10 @@ public sealed partial class MainWindow : Window
             {
                 NavigateTo(typeof(SyncPage));
             }
+            else if (tag == "ApiSyncPage")
+            {
+                NavigateTo(typeof(ApiSyncPage));
+            }
         }
     }
 
@@ -151,6 +155,10 @@ public sealed partial class MainWindow : Window
             else if (tag == "SyncPage")
             {
                 NavigateTo(typeof(SyncPage));
+            }
+            else if (tag == "ApiSyncPage")
+            {
+                NavigateTo(typeof(ApiSyncPage));
             }
         }
     }

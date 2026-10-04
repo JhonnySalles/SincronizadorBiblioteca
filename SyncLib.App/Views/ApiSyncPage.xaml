@@ -1,0 +1,233 @@
+<Page
+    x:Name="ApiSyncPageRoot"
+    x:Class="SyncLib.App.Views.ApiSyncPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:SyncLib.App.Models"
+    xmlns:viewmodels="using:SyncLib.App.ViewModels"
+    xmlns:converters="using:SyncLib.App.Converters"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:primitives="using:CommunityToolkit.WinUI.UI.Controls.Primitives"
+    mc:Ignorable="d"
+    Background="Transparent">
+
+    <Page.Resources>
+        <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+        <converters:StringToBrushConverter x:Key="StringToBrushConverter" />
+    </Page.Resources>
+
+    <Grid Padding="32" RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 1. Header com Status da API -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Sincronização em Lote com a API" FontSize="24" FontWeight="Bold" />
+                <TextBlock Text="Analise pastas para enviar metadados (ComicInfo / OPF) e arquivos à API do Reader Server." 
+                           Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" FontSize="13" />
+            </StackPanel>
+
+            <Button Grid.Column="1" Command="{x:Bind ViewModel.CheckApiStatusCommand}" 
+                    ToolTipService.ToolTip="{x:Bind ViewModel.ApiStatusTooltip, Mode=OneWay}" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,6">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Ellipse Width="10" Height="10" 
+                             Fill="{x:Bind ViewModel.ApiStatusColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}" 
+                             VerticalAlignment="Center"/>
+                    <TextBlock Text="Status da API" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="12"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- 2. Seleção de Pasta e Ações -->
+        <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox Header="Pasta para Análise de Metadados" 
+                         Text="{x:Bind ViewModel.SearchPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                         PlaceholderText="Selecione ou cole o caminho da pasta contendo Mangás ou Livros..."
+                         Grid.Column="0"/>
+
+                <Button Content="Selecionar Pasta" 
+                        Click="BrowseFolder_Click" 
+                        VerticalAlignment="Bottom"
+                        Height="36"
+                        Grid.Column="1"/>
+
+                <Button Command="{x:Bind ViewModel.AnalyzeFolderCommand}" 
+                        Style="{ThemeResource AccentButtonStyle}"
+                        IsEnabled="{x:Bind ViewModel.IsBusy, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}"
+                        VerticalAlignment="Bottom"
+                        Height="36"
+                        Grid.Column="2">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE721;" FontSize="14"/>
+                        <TextBlock Text="Analisar Pasta"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- 3. Grid de Itens e Situação -->
+        <Grid Grid.Row="2" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" CornerRadius="8" Padding="0">
+                <controls:DataGrid ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
+                                   AutoGenerateColumns="False"
+                                   CanUserSortColumns="True"
+                                   IsReadOnly="False"
+                                   SelectionMode="Extended"
+                                   GridLinesVisibility="Horizontal"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"
+                                   MinColumnWidth="60"
+                                   ClipboardCopyMode="None"
+                                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                   CornerRadius="8">
+                    <controls:DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="primitives:DataGridColumnHeader">
+                            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
+                            <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontSize" Value="13"/>
+                            <Setter Property="Height" Value="40"/>
+                            <Setter Property="SeparatorBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+                        </Style>
+                    </controls:DataGrid.ColumnHeaderStyle>
+                    <controls:DataGrid.Columns>
+                        <!-- Selecionar -->
+                        <controls:DataGridCheckBoxColumn Header="✔" 
+                                                         Binding="{Binding IsSelected, Mode=TwoWay}" 
+                                                         Width="48" 
+                                                         MinWidth="40"/>
+
+                        <!-- Nome do Arquivo -->
+                        <controls:DataGridTemplateColumn Header="Arquivo" Width="400" MinWidth="250" CanUserSort="True">
+                            <controls:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="models:ApiSyncItemModel">
+                                    <Border Padding="12,6" ToolTipService.ToolTip="{x:Bind FilePath}">
+                                        <TextBlock Text="{x:Bind FileName}" VerticalAlignment="Center" FontWeight="Medium" TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                </DataTemplate>
+                            </controls:DataGridTemplateColumn.CellTemplate>
+                        </controls:DataGridTemplateColumn>
+
+                        <!-- Tipo: Mangá / Livro -->
+                        <controls:DataGridTemplateColumn Header="Mangá / Livro" Width="160" MinWidth="130">
+                            <controls:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="models:ApiSyncItemModel">
+                                    <Border Padding="6,4">
+                                        <ComboBox ItemsSource="{x:Bind AvailableMediaTypes}" 
+                                                  SelectedItem="{x:Bind MediaType, Mode=TwoWay}"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Center"
+                                                  FontSize="12"/>
+                                    </Border>
+                                </DataTemplate>
+                            </controls:DataGridTemplateColumn.CellTemplate>
+                        </controls:DataGridTemplateColumn>
+
+                        <!-- Situação na API -->
+                        <controls:DataGridTemplateColumn Header="Situação na API" Width="180" MinWidth="140">
+                            <controls:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="models:ApiSyncItemModel">
+                                    <Border Padding="12,6" ToolTipService.ToolTip="{x:Bind StatusDetails}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <Ellipse Width="10" Height="10" 
+                                                     Fill="{x:Bind StatusColor, Mode=OneWay, Converter={StaticResource StringToBrushConverter}}" 
+                                                     VerticalAlignment="Center"/>
+                                            <TextBlock Text="{x:Bind Status, Mode=OneWay}" 
+                                                       FontWeight="SemiBold" 
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </controls:DataGridTemplateColumn.CellTemplate>
+                        </controls:DataGridTemplateColumn>
+
+                        <!-- Caminho Completo -->
+                        <controls:DataGridTemplateColumn Header="Caminho Completo" Width="*" MinWidth="250">
+                            <controls:DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="models:ApiSyncItemModel">
+                                    <Border Padding="12,6">
+                                        <TextBlock Text="{x:Bind FilePath}" 
+                                                   Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" 
+                                                   VerticalAlignment="Center" 
+                                                   FontSize="12" 
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                </DataTemplate>
+                            </controls:DataGridTemplateColumn.CellTemplate>
+                        </controls:DataGridTemplateColumn>
+                    </controls:DataGrid.Columns>
+                </controls:DataGrid>
+            </Border>
+
+            <!-- Dica Visual quando a lista estiver vazia -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsHitTestVisible="False"
+                        Visibility="{x:Bind ViewModel.Items.Count, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}">
+                <FontIcon Glyph="&#xE838;" FontSize="36" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock Text="Informe uma pasta acima ou arraste uma pasta para este painel" 
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" 
+                           FontWeight="Medium"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 4. Rodapé e Botões de Ação -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
+                <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
+                           Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" />
+                <ProgressBar Minimum="0" 
+                             Maximum="{x:Bind ViewModel.ProcessTotal, Mode=OneWay}" 
+                             Value="{x:Bind ViewModel.ProcessProgress, Mode=OneWay}" 
+                             Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" 
+                             Height="4" 
+                             HorizontalAlignment="Stretch"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                <Button Content="Marcar Todos" Click="SelectAll_Click" />
+                <Button Content="Desmarcar Todos" Click="UnselectAll_Click" />
+                
+                <Button Command="{x:Bind ViewModel.ProcessCommand}" 
+                        IsEnabled="{x:Bind ViewModel.IsBusy, Mode=OneWay, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Invert}"
+                        Style="{ThemeResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE896;" FontSize="14"/>
+                        <TextBlock Text="Processar"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>
