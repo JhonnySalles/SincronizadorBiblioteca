@@ -48,7 +48,7 @@ public partial class FileItemModel : ObservableObject
     private string _statusTooltip = string.Empty;
 
     [ObservableProperty]
-    private int? _volumeNumber;
+    private decimal? _volumeNumber;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusDotColor))]

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "difmUPGVv7c=",
+  "dgSpecHash": "hboTWySX3DU=",
   "success": true,
   "projectFilePath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
   "expectedPackageFiles": [
@@ -10,6 +10,9 @@
     "F:\\Caches\\NuGet\\packages\\documentformat.openxml.framework\\3.1.1\\documentformat.openxml.framework.3.1.1.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\excelnumberformat\\1.1.0\\excelnumberformat.1.1.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\kawazu\\1.1.4\\kawazu.1.1.4.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\libnmecab\\0.10.1\\libnmecab.0.10.1.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\libnmecab.ipadicbin\\0.10.0\\libnmecab.ipadicbin.0.10.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\microsoft.codeanalysis.analyzers\\3.3.3\\microsoft.codeanalysis.analyzers.3.3.3.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\microsoft.codeanalysis.common\\4.5.0\\microsoft.codeanalysis.common.4.5.0.nupkg.sha512",
@@ -57,7 +60,10 @@
     "F:\\Caches\\NuGet\\packages\\system.text.encoding.codepages\\6.0.0\\system.text.encoding.codepages.6.0.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\system.text.json\\8.0.4\\system.text.json.8.0.4.nupkg.sha512",
-    "F:\\Caches\\NuGet\\packages\\system.threading.channels\\6.0.0\\system.threading.channels.6.0.0.nupkg.sha512"
+    "F:\\Caches\\NuGet\\packages\\system.threading.channels\\6.0.0\\system.threading.channels.6.0.0.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.22\\microsoft.netcore.app.runtime.win-x64.8.0.22.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.22\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.22.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.22\\microsoft.aspnetcore.app.runtime.win-x64.8.0.22.nupkg.sha512"
   ],
   "logs": []
 }

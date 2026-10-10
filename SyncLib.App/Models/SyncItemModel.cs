@@ -10,6 +10,12 @@ public partial class SyncItemModel : ObservableObject
     private string _sourceLibraryName = string.Empty;
 
     [ObservableProperty]
+    private PathDisplayModel? _sourceConfig;
+
+    [ObservableProperty]
+    private PathDisplayModel? _destinationConfig;
+
+    [ObservableProperty]
     private string _sourceFilePath = string.Empty;
 
     [ObservableProperty]

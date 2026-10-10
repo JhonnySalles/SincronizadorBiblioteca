@@ -37,10 +37,34 @@ public partial class SettingsViewModel : ObservableObject
     private MediaTypeOption? _selectedMediaTypeOption;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFtpInput))]
+    [NotifyPropertyChangedFor(nameof(IsNetworkOrFtpInput))]
+    private StorageConnectionTypeOption? _selectedConnectionTypeOption;
+
+    [ObservableProperty]
+    private string _inputServerHost = string.Empty;
+
+    [ObservableProperty]
+    private int _inputServerPort = 21;
+
+    [ObservableProperty]
+    private string _inputUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _inputPassword = string.Empty;
+
+    public bool IsFtpInput => SelectedConnectionTypeOption?.Type == StorageConnectionType.Ftp;
+    public bool IsNetworkOrFtpInput => SelectedConnectionTypeOption?.Type != StorageConnectionType.Local;
+
+    [ObservableProperty]
     private string _statusMessage = string.Empty;
 
     public List<MediaTypeOption> MediaTypeOptions { get; } = Enum.GetValues<MediaType>()
         .Select(t => new MediaTypeOption { Type = t })
+        .ToList();
+
+    public List<StorageConnectionTypeOption> ConnectionTypeOptions { get; } = Enum.GetValues<StorageConnectionType>()
+        .Select(t => new StorageConnectionTypeOption { Type = t })
         .ToList();
 
     public ObservableCollection<PathDisplayModel> ConfiguredPaths { get; } = new();
@@ -48,6 +72,7 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel()
     {
         SelectedMediaTypeOption = MediaTypeOptions.FirstOrDefault();
+        SelectedConnectionTypeOption = ConnectionTypeOptions.FirstOrDefault();
         _ = LoadConfiguredPathsAsync();
     }
 
@@ -91,8 +116,15 @@ public partial class SettingsViewModel : ObservableObject
             return;
         }
 
+        var connType = SelectedConnectionTypeOption?.Type ?? StorageConnectionType.Local;
+        if (connType == StorageConnectionType.Ftp && string.IsNullOrWhiteSpace(InputServerHost))
+        {
+            StatusMessage = "Por favor, informe o host do servidor FTP.";
+            return;
+        }
+
         var trimmedPath = InputPath.Trim();
-        if (ConfiguredPaths.Any(p => p.Path.Equals(trimmedPath, StringComparison.OrdinalIgnoreCase)))
+        if (ConfiguredPaths.Any(p => p.Path.Equals(trimmedPath, StringComparison.OrdinalIgnoreCase) && p.ConnectionType == connType && p.ServerHost.Equals(InputServerHost.Trim(), StringComparison.OrdinalIgnoreCase)))
         {
             StatusMessage = "Este caminho já foi cadastrado nas configurações.";
             return;
@@ -102,6 +134,11 @@ public partial class SettingsViewModel : ObservableObject
         {
             Path = InputPath.Trim(),
             MediaType = SelectedMediaTypeOption.Type,
+            ConnectionType = connType,
+            ServerHost = InputServerHost.Trim(),
+            ServerPort = InputServerPort > 0 ? InputServerPort : 21,
+            Username = InputUsername.Trim(),
+            Password = InputPassword.Trim(),
             Description = InputDescription.Trim(),
             CustomSuffix = InputCustomSuffix.Trim(),
             CustomFolderSuffix = InputCustomFolderSuffix.Trim(),
@@ -114,6 +151,10 @@ public partial class SettingsViewModel : ObservableObject
 
         // Resetar inputs
         InputPath = string.Empty;
+        InputServerHost = string.Empty;
+        InputServerPort = 21;
+        InputUsername = string.Empty;
+        InputPassword = string.Empty;
         InputDescription = string.Empty;
         InputCustomSuffix = string.Empty;
         InputCustomFolderSuffix = string.Empty;
@@ -151,6 +192,11 @@ public partial class SettingsViewModel : ObservableObject
                     Id = model.Id,
                     Path = model.Path,
                     MediaType = model.MediaType,
+                    ConnectionType = model.ConnectionType,
+                    ServerHost = model.ServerHost,
+                    ServerPort = model.ServerPort,
+                    Username = model.Username,
+                    Password = model.Password,
                     Description = model.Description,
                     CustomSuffix = model.CustomSuffix,
                     CustomFolderSuffix = model.CustomFolderSuffix,
@@ -169,11 +215,12 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void RefreshStatuses()
+    private async Task RefreshStatusesAsync()
     {
+        StatusMessage = "Verificando status das bibliotecas...";
         foreach (var path in ConfiguredPaths)
         {
-            path.CheckStatus();
+            await path.CheckStatusAsync();
         }
         StatusMessage = "Status dos caminhos atualizados.";
     }
@@ -184,6 +231,7 @@ public partial class SettingsViewModel : ObservableObject
 
         List<PathDisplayModel> sorted = columnTag switch
         {
+            "ConnectionType" or "Conexão" => ascending ? ConfiguredPaths.OrderBy(p => p.ConnectionTypeDisplayName).ToList() : ConfiguredPaths.OrderByDescending(p => p.ConnectionTypeDisplayName).ToList(),
             "MediaType" or "Tipo" => ascending ? ConfiguredPaths.OrderBy(p => p.MediaTypeDisplayName).ToList() : ConfiguredPaths.OrderByDescending(p => p.MediaTypeDisplayName).ToList(),
             "Description" or "Descrição" => ascending ? ConfiguredPaths.OrderBy(p => p.Description).ToList() : ConfiguredPaths.OrderByDescending(p => p.Description).ToList(),
             "CustomSuffix" or "Sufixo Arquivo" => ascending ? ConfiguredPaths.OrderBy(p => p.CustomSuffix).ToList() : ConfiguredPaths.OrderByDescending(p => p.CustomSuffix).ToList(),

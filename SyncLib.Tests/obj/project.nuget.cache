@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "vS1A39svusY=",
+  "dgSpecHash": "mfEuWND/R9U=",
   "success": true,
   "projectFilePath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Tests\\SyncLib.Tests.csproj",
   "expectedPackageFiles": [
@@ -12,6 +12,9 @@
     "F:\\Caches\\NuGet\\packages\\documentformat.openxml.framework\\3.1.1\\documentformat.openxml.framework.3.1.1.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\excelnumberformat\\1.1.0\\excelnumberformat.1.1.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\fluentassertions\\8.11.0\\fluentassertions.8.11.0.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\kawazu\\1.1.4\\kawazu.1.1.4.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\libnmecab\\0.10.1\\libnmecab.0.10.1.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\libnmecab.ipadicbin\\0.10.0\\libnmecab.ipadicbin.0.10.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\microsoft.codecoverage\\17.8.0\\microsoft.codecoverage.17.8.0.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\microsoft.data.sqlite.core\\8.0.8\\microsoft.data.sqlite.core.8.0.8.nupkg.sha512",
     "F:\\Caches\\NuGet\\packages\\microsoft.entityframeworkcore\\8.0.8\\microsoft.entityframeworkcore.8.0.8.nupkg.sha512",

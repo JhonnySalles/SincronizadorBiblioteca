@@ -52,8 +52,28 @@ public partial class App : Application
     /// Invoked when the application is launched.
     /// </summary>
     /// <param name="args">Details about the launch request and process.</param>
-    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
+        try
+        {
+            using var db = new SyncLib.Infrastructure.Data.AppDbContext();
+            await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(
+                db.Database,
+                @"CREATE TABLE IF NOT EXISTS ""DirectoryCaches"" (
+                    ""Id"" TEXT NOT NULL CONSTRAINT ""PK_DirectoryCaches"" PRIMARY KEY,
+                    ""RootPath"" TEXT NOT NULL,
+                    ""SeriesName"" TEXT NOT NULL,
+                    ""FolderPath"" TEXT NOT NULL,
+                    ""MediaType"" TEXT NOT NULL,
+                    ""LastScanned"" TEXT NOT NULL
+                );");
+            await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.MigrateAsync(db.Database);
+        }
+        catch (Exception ex)
+        {
+            LogError("DatabaseStartup", ex);
+        }
+
         _window = new MainWindow();
         _window.Activate();
     }

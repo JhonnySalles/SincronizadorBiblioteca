@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SyncLib.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e2fddf6c58c0e21a8380a3acb0579c4cff37b6d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bcd44ef95a46fb00a74b8404e95edbbfccccf167")]
 [assembly: System.Reflection.AssemblyProductAttribute("SyncLib.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SyncLib.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

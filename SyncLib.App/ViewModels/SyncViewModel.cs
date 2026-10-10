@@ -5,7 +5,9 @@ using SyncLib.App.Models;
 using SyncLib.Core.Entities;
 using SyncLib.Core.Enums;
 using SyncLib.Core.Helpers;
+using SyncLib.Core.Services.Storage;
 using SyncLib.Infrastructure.Data;
+using SyncLib.Infrastructure.Services.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,6 +20,8 @@ namespace SyncLib.App.ViewModels;
 
 public partial class SyncViewModel : ObservableObject
 {
+    private readonly IStorageProviderFactory _storageFactory = new StorageProviderFactory();
+
     public ObservableCollection<PathDisplayModel> ConfiguredPaths { get; } = new();
 
     public List<MediaTypeOption> MediaTypeOptions { get; } = Enum.GetValues<MediaType>()
@@ -104,6 +108,26 @@ public partial class SyncViewModel : ObservableObject
         }
     }
 
+    private ConfigurationPath ToEntity(PathDisplayModel model)
+    {
+        return new ConfigurationPath
+        {
+            Id = model.Id,
+            Path = model.Path,
+            MediaType = model.MediaType,
+            ConnectionType = model.ConnectionType,
+            ServerHost = model.ServerHost,
+            ServerPort = model.ServerPort,
+            Username = model.Username,
+            Password = model.Password,
+            Description = model.Description,
+            CustomSuffix = model.CustomSuffix,
+            CustomFolderSuffix = model.CustomFolderSuffix,
+            AllowedExtensions = model.AllowedExtensions,
+            IncludesSubfolders = model.IncludesSubfolders
+        };
+    }
+
     [RelayCommand]
     public async Task AnalyzeLibrariesAsync()
     {
@@ -115,36 +139,35 @@ public partial class SyncViewModel : ObservableObject
 
         var targetType = SelectedMediaTypeOption.Type;
         var relevantPaths = ConfiguredPaths
-            .Where(p => p.MediaType == targetType && p.ExistsOnDisk && Directory.Exists(p.Path))
+            .Where(p => p.MediaType == targetType && p.ExistsOnDisk)
             .ToList();
 
         if (relevantPaths.Count < 2)
         {
-            StatusMessage = "É necessário ter pelo menos 2 pastas configuradas e existentes no disco para comparar.";
+            StatusMessage = "É necessário ter pelo menos 2 bibliotecas ativas configuradas para comparar.";
             return;
         }
 
         IsBusy = true;
         IsAnalyzing = true;
-        StatusMessage = "Analisando pastas em paralelo...";
+        StatusMessage = "Analisando bibliotecas em paralelo...";
         SyncItems.Clear();
 
         try
         {
-            // Estrutura para armazenar arquivos indexados por biblioteca
-            // Key: PathDisplayModel, Value: Dicionário de (RelativePath Normalizado -> (RelativePath Real, FullPath))
-            var libraryIndexes = new ConcurrentDictionary<PathDisplayModel, Dictionary<string, (string RelativePath, string FullPath)>>();
+            var libraryIndexes = new ConcurrentDictionary<PathDisplayModel, List<IndexedFileInfo>>();
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
-                Parallel.ForEach(relevantPaths, lib =>
+                var tasks = relevantPaths.Select(async lib =>
                 {
-                    var fileDict = new Dictionary<string, (string RelativePath, string FullPath)>(StringComparer.OrdinalIgnoreCase);
+                    var fileList = new List<IndexedFileInfo>();
+                    var entity = ToEntity(lib);
+                    using var storage = _storageFactory.CreateProvider(entity);
 
                     try
                     {
-                        var searchOption = lib.IncludesSubfolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                        var allFiles = Directory.EnumerateFiles(lib.Path, "*.*", searchOption);
+                        var allFiles = await storage.GetFilesAsync(lib.Path, "*.*", recursive: lib.IncludesSubfolders);
 
                         // Parse e normalização das extensões permitidas
                         HashSet<string>? allowedExtsSet = null;
@@ -174,8 +197,27 @@ public partial class SyncViewModel : ObservableObject
                                     continue;
                             }
 
-                            string relPath = Path.GetRelativePath(lib.Path, file);
-                            fileDict[relPath] = (relPath, file);
+                            string relPath = file.StartsWith(lib.Path, StringComparison.OrdinalIgnoreCase)
+                                ? file.Substring(lib.Path.Length).TrimStart('\\', '/')
+                                : Path.GetFileName(file);
+
+                            string fileName = Path.GetFileName(file);
+                            var (series, vol) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(fileName);
+                            string normSeries = Normalize(series);
+                            string volKey = vol.HasValue ? $"VOL:{normSeries}:{vol.Value}" : $"FILE:{normSeries}:{Normalize(fileName)}";
+                            string dirPath = Path.GetDirectoryName(file)?.Replace('\\', '/') ?? lib.Path;
+
+                            fileList.Add(new IndexedFileInfo
+                            {
+                                RelativePath = relPath,
+                                FullPath = file,
+                                FileName = fileName,
+                                SeriesName = series,
+                                VolumeNumber = vol,
+                                NormalizedSeries = normSeries,
+                                VolumeKey = volKey,
+                                DirectoryPath = dirPath
+                            });
                         }
                     }
                     catch (Exception ex)
@@ -183,11 +225,13 @@ public partial class SyncViewModel : ObservableObject
                         System.Diagnostics.Debug.WriteLine($"Erro ao indexar {lib.Path}: {ex.Message}");
                     }
 
-                    libraryIndexes[lib] = fileDict;
+                    libraryIndexes[lib] = fileList;
                 });
+
+                await Task.WhenAll(tasks);
             });
 
-            // Comparar as listas afim de identificar arquivos que estão em uma biblioteca e não estão nas outras
+            // Comparar as listas a fim de identificar arquivos que estão em uma biblioteca e não estão nas outras
             var generatedItems = new List<SyncItemModel>();
 
             foreach (var sourceLib in relevantPaths)
@@ -197,28 +241,51 @@ public partial class SyncViewModel : ObservableObject
 
                 var otherLibs = relevantPaths.Where(p => p != sourceLib).ToList();
 
-                foreach (var kvp in sourceFiles)
+                foreach (var sourceFile in sourceFiles)
                 {
-                    string relPath = kvp.Key;
-                    var (actualRelPath, fullSourcePath) = kvp.Value;
-                    string fileName = Path.GetFileName(fullSourcePath);
-
                     foreach (var destLib in otherLibs)
                     {
                         if (!libraryIndexes.TryGetValue(destLib, out var destFiles))
                             continue;
 
-                        // Se o arquivo não existir na biblioteca de destino
-                        if (!destFiles.ContainsKey(relPath))
+                        bool existsInDest = destFiles.Any(d =>
+                            d.VolumeKey.Equals(sourceFile.VolumeKey, StringComparison.OrdinalIgnoreCase) ||
+                            d.RelativePath.Equals(sourceFile.RelativePath, StringComparison.OrdinalIgnoreCase));
+
+                        if (!existsInDest)
                         {
-                            string destFullDir = Path.GetDirectoryName(Path.Combine(destLib.Path, actualRelPath)) ?? destLib.Path;
-                            string destFullPath = Path.Combine(destLib.Path, actualRelPath);
+                            string destFullDir;
+
+                            if (!destLib.IncludesSubfolders)
+                            {
+                                destFullDir = destLib.Path;
+                            }
+                            else
+                            {
+                                var existingSameSeries = destFiles.FirstOrDefault(d => d.NormalizedSeries.Equals(sourceFile.NormalizedSeries, StringComparison.OrdinalIgnoreCase));
+                                if (existingSameSeries != null && !string.IsNullOrEmpty(existingSameSeries.DirectoryPath))
+                                {
+                                    destFullDir = existingSameSeries.DirectoryPath;
+                                }
+                                else
+                                {
+                                    destFullDir = await FindOrProposeDestinationFolderAsync(destLib, sourceFile.SeriesName, destLib.CustomFolderSuffix);
+                                }
+                            }
+
+                            var processed = FileNameProcessor.Process(sourceFile.FileName, targetType, null, destLib.CustomSuffix);
+                            string destFileName = processed.FormattedFileName;
+                            string destFullPath = destLib.ConnectionType == StorageConnectionType.Ftp
+                                ? $"{destFullDir.TrimEnd('/')}/{destFileName}"
+                                : Path.Combine(destFullDir, destFileName);
 
                             generatedItems.Add(new SyncItemModel
                             {
                                 SourceLibraryName = string.IsNullOrWhiteSpace(sourceLib.Description) ? Path.GetFileName(sourceLib.Path) : sourceLib.Description,
-                                SourceFilePath = fullSourcePath,
-                                SourceFileName = fileName,
+                                SourceConfig = sourceLib,
+                                DestinationConfig = destLib,
+                                SourceFilePath = sourceFile.FullPath,
+                                SourceFileName = sourceFile.FileName,
                                 DestinationLibraryName = string.IsNullOrWhiteSpace(destLib.Description) ? Path.GetFileName(destLib.Path) : destLib.Description,
                                 DestinationFolderPath = destFullDir,
                                 DestinationFilePath = destFullPath,
@@ -263,7 +330,7 @@ public partial class SyncViewModel : ObservableObject
         IsProcessing = true;
         ProgressTotal = pendingToCopy.Count;
         ProgressValue = 0;
-        StatusMessage = "Iniciando cópia dos arquivos...";
+        StatusMessage = "Iniciando sincronização dos arquivos...";
 
         int successCount = 0;
         int errorCount = 0;
@@ -274,34 +341,41 @@ public partial class SyncViewModel : ObservableObject
             {
                 try
                 {
-                    if (!File.Exists(item.SourceFilePath))
+                    var srcEntity = item.SourceConfig != null ? ToEntity(item.SourceConfig) : new ConfigurationPath { Path = Path.GetDirectoryName(item.SourceFilePath) ?? "" };
+                    var destEntity = item.DestinationConfig != null ? ToEntity(item.DestinationConfig) : new ConfigurationPath { Path = item.DestinationFolderPath };
+
+                    using var sourceStorage = _storageFactory.CreateProvider(srcEntity);
+                    using var destStorage = _storageFactory.CreateProvider(destEntity);
+
+                    bool srcExists = await sourceStorage.FileExistsAsync(item.SourceFilePath);
+                    if (!srcExists)
                     {
                         item.HasError = true;
                         item.RowColor = "#EF4444";
-                        item.StatusTooltip = "Arquivo de origem não encontrado.";
+                        item.StatusTooltip = "Arquivo de origem não encontrado no storage.";
                         errorCount++;
                         continue;
                     }
 
-                    if (!Directory.Exists(item.DestinationFolderPath))
+                    if (!await destStorage.DirectoryExistsAsync(item.DestinationFolderPath))
                     {
-                        Directory.CreateDirectory(item.DestinationFolderPath);
+                        await destStorage.CreateDirectoryAsync(item.DestinationFolderPath);
                     }
 
-                    // Copia o arquivo
-                    File.Copy(item.SourceFilePath, item.DestinationFilePath, overwrite: true);
+                    // Transfere o arquivo usando a abstração de storage (Local, Rede ou FTP)
+                    await _storageFactory.TransferFileAsync(sourceStorage, item.SourceFilePath, destStorage, item.DestinationFilePath, overwrite: true);
 
                     item.IsCopied = true;
                     item.HasError = false;
                     item.RowColor = "Transparent";
-                    item.StatusTooltip = "Copiado com sucesso.";
+                    item.StatusTooltip = "Sincronizado com sucesso.";
                     successCount++;
                 }
                 catch (Exception ex)
                 {
                     item.HasError = true;
                     item.RowColor = "#EF4444";
-                    item.StatusTooltip = $"Erro ao copiar: {ex.Message}";
+                    item.StatusTooltip = $"Erro ao transferir: {ex.Message}";
                     errorCount++;
                 }
 
@@ -311,7 +385,7 @@ public partial class SyncViewModel : ObservableObject
 
         IsBusy = false;
         IsProcessing = false;
-        StatusMessage = $"Processamento concluído. {successCount} copiado(s), {errorCount} erro(s).";
+        StatusMessage = $"Processamento concluído. {successCount} copiado(s)/enviado(s), {errorCount} erro(s).";
     }
 
     [RelayCommand]
@@ -332,4 +406,73 @@ public partial class SyncViewModel : ObservableObject
         ProgressTotal = 0;
         StatusMessage = "Fila de sincronização limpa.";
     }
+
+    private async Task<string> FindOrProposeDestinationFolderAsync(PathDisplayModel destLib, string seriesName, string? customFolderSuffix)
+    {
+        var entity = ToEntity(destLib);
+        using var storage = _storageFactory.CreateProvider(entity);
+
+        if (await storage.DirectoryExistsAsync(destLib.Path))
+        {
+            try
+            {
+                var subdirs = await storage.GetDirectoriesAsync(destLib.Path);
+                string normSeries = Normalize(seriesName);
+
+                // 1. Procura pasta contendo arquivos da série
+                foreach (var dir in subdirs)
+                {
+                    var files = await storage.GetFilesAsync(dir);
+                    foreach (var f in files)
+                    {
+                        var (extractedSeries, extractedVol) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(Path.GetFileName(f));
+                        string normExtracted = Normalize(extractedSeries);
+                        if (!string.IsNullOrEmpty(normExtracted) &&
+                            (normExtracted == normSeries || normExtracted.StartsWith(normSeries) || normSeries.StartsWith(normExtracted)))
+                        {
+                            return dir;
+                        }
+                    }
+                }
+
+                // 2. Procura pasta por nome normalizado
+                foreach (var dir in subdirs)
+                {
+                    string folderName = Path.GetFileName(dir.TrimEnd('/', '\\'));
+                    string normFolder = Normalize(folderName);
+                    if (normFolder == normSeries || normFolder.StartsWith(normSeries) || normSeries.StartsWith(normFolder))
+                    {
+                        return dir;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        string cleanSeries = FileNameProcessor.CleanSeriesName(seriesName);
+        string folderSuffix = !string.IsNullOrWhiteSpace(customFolderSuffix) ? $" {customFolderSuffix.Trim()}" : "";
+        string folderNameOnly = $"{cleanSeries}{folderSuffix}";
+
+        return destLib.ConnectionType == StorageConnectionType.Ftp
+            ? $"{destLib.Path.TrimEnd('/')}/{folderNameOnly}"
+            : Path.Combine(destLib.Path, folderNameOnly);
+    }
+
+    private static string Normalize(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        return System.Text.RegularExpressions.Regex.Replace(input, @"[\s,_\-'""‘’“”]", "").ToLowerInvariant();
+    }
+}
+
+public class IndexedFileInfo
+{
+    public string RelativePath { get; set; } = string.Empty;
+    public string FullPath { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string SeriesName { get; set; } = string.Empty;
+    public decimal? VolumeNumber { get; set; }
+    public string NormalizedSeries { get; set; } = string.Empty;
+    public string VolumeKey { get; set; } = string.Empty;
+    public string DirectoryPath { get; set; } = string.Empty;
 }

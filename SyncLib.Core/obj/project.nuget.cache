@@ -1,8 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "4FFudnYOuHM=",
+  "dgSpecHash": "/8wOsF+7JgU=",
   "success": true,
   "projectFilePath": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "F:\\Caches\\NuGet\\packages\\kawazu\\1.1.4\\kawazu.1.1.4.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\libnmecab\\0.10.1\\libnmecab.0.10.1.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\libnmecab.ipadicbin\\0.10.0\\libnmecab.ipadicbin.0.10.0.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.22\\microsoft.netcore.app.runtime.win-x64.8.0.22.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.22\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.22.nupkg.sha512",
+    "F:\\Caches\\NuGet\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.22\\microsoft.aspnetcore.app.runtime.win-x64.8.0.22.nupkg.sha512"
+  ],
   "logs": []
 }

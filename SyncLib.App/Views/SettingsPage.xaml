@@ -15,6 +15,7 @@
 
     <Page.Resources>
         <converters:StringToBrushConverter x:Key="StringToBrushConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="32" RowSpacing="24">
@@ -28,33 +29,71 @@
         <!-- Cabeçalho -->
         <StackPanel Grid.Row="0" Spacing="4">
             <TextBlock Text="Configurações de Caminhos" Style="{ThemeResource TitleTextBlockStyle}" FontWeight="Bold"/>
-            <TextBlock Text="Cadastre os diretórios nos discos externos para sincronização e mapeamento de biblioteca." Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+            <TextBlock Text="Cadastre os diretórios locais, pastas em rede (UNC) ou servidores FTP para sincronização e mapeamento." Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
         </StackPanel>
 
         <!-- Card de Inserção de Novos Campos -->
         <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
             <StackPanel Spacing="16">
-                <!-- Linha 1: Caminho e Tipo -->
+                <!-- Linha 1: Conexão, Caminho e Tipo de Mídia -->
                 <Grid ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="170" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="220" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Header="Caminho Completo do Diretório" 
+                    <ComboBox Header="Conexão" 
+                              ItemsSource="{x:Bind ViewModel.ConnectionTypeOptions}" 
+                              SelectedItem="{x:Bind ViewModel.SelectedConnectionTypeOption, Mode=TwoWay}"
+                              DisplayMemberPath="DisplayName"
+                              HorizontalAlignment="Stretch"
+                              Grid.Column="0"/>
+
+                    <TextBox Header="Caminho / Diretório Raiz" 
                              Text="{x:Bind ViewModel.InputPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                             PlaceholderText="Ex: E:\Mangas\Portugues"
-                             Grid.Column="0"/>
+                             PlaceholderText="Ex: E:\Mangas ou /Mangas/Portugues"
+                             Grid.Column="1"/>
 
                     <ComboBox Header="Tipo de Mídia" 
                               ItemsSource="{x:Bind ViewModel.MediaTypeOptions}" 
                               SelectedItem="{x:Bind ViewModel.SelectedMediaTypeOption, Mode=TwoWay}"
                               DisplayMemberPath="DisplayName"
                               HorizontalAlignment="Stretch"
-                              Grid.Column="1"/>
+                              Grid.Column="2"/>
                 </Grid>
 
-                <!-- Linha 2: Descrição, Sufixo Arquivo, Sufixo Pasta, Extensões, Sub-pastas e Botão Inserir -->
+                <!-- Linha 2 (Condicional FTP/Rede): Host, Porta, Usuário, Senha -->
+                <Grid ColumnSpacing="16" Visibility="{x:Bind ViewModel.IsNetworkOrFtpInput, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="1.5*" />
+                        <ColumnDefinition Width="1.5*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Header="Servidor / Host" 
+                             Text="{x:Bind ViewModel.InputServerHost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="Ex: ftp.meuservidor.com ou 192.168.1.100"
+                             Grid.Column="0"/>
+
+                    <TextBox Header="Porta" 
+                             Text="{x:Bind ViewModel.InputServerPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="21"
+                             Grid.Column="1"/>
+
+                    <TextBox Header="Usuário" 
+                             Text="{x:Bind ViewModel.InputUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             PlaceholderText="Ex: anonymous ou usuario"
+                             Grid.Column="2"/>
+
+                    <PasswordBox Header="Senha" 
+                                 Password="{x:Bind ViewModel.InputPassword, Mode=TwoWay}" 
+                                 PlaceholderText="Senha de acesso"
+                                 Grid.Column="3"/>
+                </Grid>
+
+                <!-- Linha 3: Descrição, Sufixo Arquivo, Sufixo Pasta, Extensões, Sub-pastas e Botão Inserir -->
                 <Grid ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -81,7 +120,7 @@
                              Grid.Column="2"/>
 
                     <TextBox Header="Extensões" 
-                             ToolTipService.ToolTip="Separado por vírgula"
+                             ToolTipService.ToolTip="Separado por vírgula" 
                              Text="{x:Bind ViewModel.InputAllowedExtensions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                              PlaceholderText="Ex: .cbr, .cbz, epub"
                              Grid.Column="3"/>
@@ -131,8 +170,17 @@
                 </Style>
             </controls:DataGrid.ColumnHeaderStyle>
             <controls:DataGrid.Columns>
-                <!-- Tipo -->
-                <controls:DataGridTemplateColumn Header="Tipo" Tag="MediaType" Width="140" MinWidth="100" CanUserSort="True">
+                <!-- Conexão -->
+                <controls:DataGridTemplateColumn Header="Conexão" Tag="ConnectionType" Width="120" MinWidth="90" CanUserSort="True">
+                    <controls:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:PathDisplayModel">
+                            <TextBlock Text="{x:Bind ConnectionTypeDisplayName, Mode=OneWay}" VerticalAlignment="Center" Margin="12,0" FontWeight="SemiBold"/>
+                        </DataTemplate>
+                    </controls:DataGridTemplateColumn.CellTemplate>
+                </controls:DataGridTemplateColumn>
+
+                <!-- Tipo de Mídia -->
+                <controls:DataGridTemplateColumn Header="Tipo Mídia" Tag="MediaType" Width="140" MinWidth="100" CanUserSort="True">
                     <controls:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:PathDisplayModel">
                             <TextBlock Text="{x:Bind MediaTypeDisplayName, Mode=OneWay}" VerticalAlignment="Center" Margin="12,0" FontWeight="Medium"/>
@@ -151,27 +199,31 @@
                 </controls:DataGridTemplateColumn>
 
                 <!-- Descrição -->
-                <controls:DataGridTextColumn Header="Descrição" Tag="Description" Width="170" MinWidth="120" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Descrição" Tag="Description" Width="160" MinWidth="120" CanUserSort="True"
                                              Binding="{Binding Description, Mode=TwoWay}"/>
 
                 <!-- Sufixo Arquivo -->
-                <controls:DataGridTextColumn Header="Sufixo Arquivo" Tag="CustomSuffix" Width="120" MinWidth="90" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Sufixo Arquivo" Tag="CustomSuffix" Width="110" MinWidth="90" CanUserSort="True"
                                              Binding="{Binding CustomSuffix, Mode=TwoWay}"/>
 
                 <!-- Sufixo Pasta -->
-                <controls:DataGridTextColumn Header="Sufixo Pasta" Tag="CustomFolderSuffix" Width="120" MinWidth="90" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Sufixo Pasta" Tag="CustomFolderSuffix" Width="110" MinWidth="90" CanUserSort="True"
                                              Binding="{Binding CustomFolderSuffix, Mode=TwoWay}"/>
 
                 <!-- Extensões -->
-                <controls:DataGridTextColumn Header="Extensões" Tag="AllowedExtensions" Width="130" MinWidth="90" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Extensões" Tag="AllowedExtensions" Width="120" MinWidth="90" CanUserSort="True"
                                              Binding="{Binding AllowedExtensions, Mode=TwoWay}"/>
 
+                <!-- Servidor / Host -->
+                <controls:DataGridTextColumn Header="Servidor/Host" Tag="ServerHost" Width="130" MinWidth="90" CanUserSort="True"
+                                             Binding="{Binding ServerHost, Mode=TwoWay}"/>
+
                 <!-- Caminho -->
-                <controls:DataGridTextColumn Header="Caminho" Tag="Path" Width="*" MinWidth="180" CanUserSort="True"
+                <controls:DataGridTextColumn Header="Caminho" Tag="Path" Width="*" MinWidth="160" CanUserSort="True"
                                              Binding="{Binding Path, Mode=TwoWay}"/>
 
                 <!-- Sub-pastas -->
-                <controls:DataGridCheckBoxColumn Header="Sub-pastas" Tag="IncludesSubfolders" Width="95" MinWidth="75" CanUserSort="True"
+                <controls:DataGridCheckBoxColumn Header="Sub-pastas" Tag="IncludesSubfolders" Width="90" MinWidth="70" CanUserSort="True"
                                                  Binding="{Binding IncludesSubfolders, Mode=TwoWay}"/>
 
                 <!-- Status -->

@@ -7,10 +7,63 @@
     <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">F:\Caches\NuGet\packages</NuGetPackageRoot>
     <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">F:\Caches\NuGet\packages;D:\Arquivos de programas\Microsoft Visual Studio\Shared\NuGetPackages</NuGetPackageFolders>
     <NuGetProjectStyle Condition=" '$(NuGetProjectStyle)' == '' ">PackageReference</NuGetProjectStyle>
-    <NuGetToolVersion Condition=" '$(NuGetToolVersion)' == '' ">6.14.2</NuGetToolVersion>
+    <NuGetToolVersion Condition=" '$(NuGetToolVersion)' == '' ">6.14.0</NuGetToolVersion>
   </PropertyGroup>
   <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <SourceRoot Include="F:\Caches\NuGet\packages\" />
     <SourceRoot Include="D:\Arquivos de programas\Microsoft Visual Studio\Shared\NuGetPackages\" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Content Include="$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\AUTHORS" Condition="Exists('$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\AUTHORS')">
+      <NuGetPackageId>Kawazu</NuGetPackageId>
+      <NuGetPackageVersion>1.1.4</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>AUTHORS</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\COPYING" Condition="Exists('$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\COPYING')">
+      <NuGetPackageId>Kawazu</NuGetPackageId>
+      <NuGetPackageVersion>1.1.4</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>COPYING</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\char.bin" Condition="Exists('$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\char.bin')">
+      <NuGetPackageId>Kawazu</NuGetPackageId>
+      <NuGetPackageVersion>1.1.4</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>char.bin</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\matrix.bin" Condition="Exists('$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\matrix.bin')">
+      <NuGetPackageId>Kawazu</NuGetPackageId>
+      <NuGetPackageVersion>1.1.4</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>matrix.bin</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\sys.dic" Condition="Exists('$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\sys.dic')">
+      <NuGetPackageId>Kawazu</NuGetPackageId>
+      <NuGetPackageVersion>1.1.4</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>sys.dic</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\unk.dic" Condition="Exists('$(NuGetPackageRoot)\kawazu\1.1.4\contentFiles\any\net5.0\unk.dic')">
+      <NuGetPackageId>Kawazu</NuGetPackageId>
+      <NuGetPackageVersion>1.1.4</NuGetPackageVersion>
+      <NuGetItemType>Content</NuGetItemType>
+      <Pack>false</Pack>
+      <Private>False</Private>
+      <Link>unk.dic</Link>
+    </Content>
+  </ItemGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <PkgKawazu Condition=" '$(PkgKawazu)' == '' ">F:\Caches\NuGet\packages\kawazu\1.1.4</PkgKawazu>
+  </PropertyGroup>
 </Project>

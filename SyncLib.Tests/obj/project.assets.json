@@ -115,6 +115,57 @@
           }
         }
       },
+      "Kawazu/1.1.4": {
+        "type": "package",
+        "dependencies": {
+          "LibNMeCab": "0.10.1",
+          "LibNMeCab.IpaDicBin": "0.10.0"
+        },
+        "compile": {
+          "lib/net5.0/Kawazu.dll": {}
+        },
+        "runtime": {
+          "lib/net5.0/Kawazu.dll": {}
+        },
+        "contentFiles": {
+          "contentFiles/any/any/_._": {
+            "buildAction": "None",
+            "codeLanguage": "any",
+            "copyToOutput": false
+          }
+        }
+      },
+      "LibNMeCab/0.10.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/LibNMeCab.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/LibNMeCab.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "LibNMeCab.IpaDicBin/0.10.0": {
+        "type": "package",
+        "dependencies": {
+          "LibNMeCab": "[0.10.0, 0.11.0)"
+        },
+        "compile": {
+          "lib/netstandard2.0/LibNMeCab.IpaDicBin.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/LibNMeCab.IpaDicBin.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/_._": {}
+        }
+      },
       "Microsoft.CodeCoverage/17.8.0": {
         "type": "package",
         "compile": {
@@ -2396,6 +2447,9 @@
       "SyncLib.Core/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Kawazu": "1.1.4"
+        },
         "compile": {
           "bin/placeholder/SyncLib.Core.dll": {}
         },
@@ -2621,6 +2675,82 @@
         "lib/netstandard2.1/FluentAssertions.dll",
         "lib/netstandard2.1/FluentAssertions.pdb",
         "lib/netstandard2.1/FluentAssertions.xml"
+      ]
+    },
+    "Kawazu/1.1.4": {
+      "sha512": "ZXSCv+STeJomB+sjHBk74b30rAI/JTPAzanC7YhsP+6qy7HzZV5QYHhtpXd21jdCUjvSasAhbIZzpa+BFZoOfA==",
+      "type": "package",
+      "path": "kawazu/1.1.4",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Kawazu_icon.png",
+        "content/AUTHORS",
+        "content/COPYING",
+        "content/char.bin",
+        "content/matrix.bin",
+        "content/sys.dic",
+        "content/unk.dic",
+        "contentFiles/any/net5.0/AUTHORS",
+        "contentFiles/any/net5.0/COPYING",
+        "contentFiles/any/net5.0/char.bin",
+        "contentFiles/any/net5.0/matrix.bin",
+        "contentFiles/any/net5.0/sys.dic",
+        "contentFiles/any/net5.0/unk.dic",
+        "contentFiles/any/netcoreapp3.1/AUTHORS",
+        "contentFiles/any/netcoreapp3.1/COPYING",
+        "contentFiles/any/netcoreapp3.1/char.bin",
+        "contentFiles/any/netcoreapp3.1/matrix.bin",
+        "contentFiles/any/netcoreapp3.1/sys.dic",
+        "contentFiles/any/netcoreapp3.1/unk.dic",
+        "contentFiles/any/netstandard2.0/AUTHORS",
+        "contentFiles/any/netstandard2.0/COPYING",
+        "contentFiles/any/netstandard2.0/char.bin",
+        "contentFiles/any/netstandard2.0/matrix.bin",
+        "contentFiles/any/netstandard2.0/sys.dic",
+        "contentFiles/any/netstandard2.0/unk.dic",
+        "kawazu.1.1.4.nupkg.sha512",
+        "kawazu.nuspec",
+        "lib/net5.0/Kawazu.dll",
+        "lib/netcoreapp3.1/Kawazu.dll",
+        "lib/netstandard2.0/Kawazu.dll"
+      ]
+    },
+    "LibNMeCab/0.10.1": {
+      "sha512": "GXP1Lu5YJQM1kE0KYMMDoYVwdZdLja66yaiQK/tR3XWNGalCC+gwDS6Dm4WWuB8xgFq9VB0c71WfTNEhXyR7ww==",
+      "type": "package",
+      "path": "libnmecab/0.10.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "NMeCab-icon-512.png",
+        "lib/netstandard2.0/LibNMeCab.dll",
+        "lib/netstandard2.0/LibNMeCab.xml",
+        "libnmecab.0.10.1.nupkg.sha512",
+        "libnmecab.nuspec"
+      ]
+    },
+    "LibNMeCab.IpaDicBin/0.10.0": {
+      "sha512": "Ky8tAvVnsRyAcRi70RvA/y7+Vr/n77kqdGI+JFoH2nbMIf2ZQr8iWNDcIy8Quh/kugjYVrA2yles32xcx75nYg==",
+      "type": "package",
+      "path": "libnmecab.ipadicbin/0.10.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "NMeCab-icon-512.png",
+        "build/LibNMeCab.IpaDicBin.props",
+        "build/LibNMeCab.IpaDicBin.targets",
+        "buildMultiTargeting/LibNMeCab.IpaDicBin.props",
+        "buildMultiTargeting/LibNMeCab.IpaDicBin.targets",
+        "content/IpaDic/AUTHORS",
+        "content/IpaDic/COPYING",
+        "content/IpaDic/char.bin",
+        "content/IpaDic/matrix.bin",
+        "content/IpaDic/sys.dic",
+        "content/IpaDic/unk.dic",
+        "lib/netstandard2.0/LibNMeCab.IpaDicBin.dll",
+        "libnmecab.ipadicbin.0.10.0.nupkg.sha512",
+        "libnmecab.ipadicbin.nuspec"
       ]
     },
     "Microsoft.CodeCoverage/17.8.0": {

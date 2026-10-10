@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SyncLib.Core.Entities;
+using SyncLib.Core.Enums;
 using System;
 using System.IO;
 
@@ -48,6 +49,11 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Path).IsRequired();
             entity.Property(e => e.MediaType).HasConversion<string>();
+            entity.Property(e => e.ConnectionType).HasConversion<string>().HasDefaultValue(StorageConnectionType.Local);
+            entity.Property(e => e.ServerHost).HasDefaultValue("");
+            entity.Property(e => e.ServerPort).HasDefaultValue(0);
+            entity.Property(e => e.Username).HasDefaultValue("");
+            entity.Property(e => e.Password).HasDefaultValue("");
             entity.Property(e => e.CustomSuffix).HasDefaultValue("");
             entity.Property(e => e.CustomFolderSuffix).HasDefaultValue("");
         });

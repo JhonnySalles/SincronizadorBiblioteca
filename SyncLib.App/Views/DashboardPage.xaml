@@ -318,36 +318,77 @@
             </StackPanel>
         </Grid>
 
-        <!-- 5. Rodapé / Status + Barra de Progresso + Botões -->
-        <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <!-- 5. Rodapé / Legenda + Status + Barra de Progresso + Botões -->
+        <Grid Grid.Row="4" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
-                <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
-                           Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" />
-                <ProgressBar Minimum="0" 
-                             Maximum="{x:Bind ViewModel.CopyTotal, Mode=OneWay}" 
-                             Value="{x:Bind ViewModel.CopyProgress, Mode=OneWay}" 
-                             Visibility="{x:Bind ViewModel.IsCopying, Mode=OneWay}" 
-                             Height="4" 
-                             HorizontalAlignment="Stretch"/>
+            <!-- Legenda de Cores -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                <!-- OK -->
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Border Width="12" Height="12" CornerRadius="3" Background="Transparent" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"/>
+                    <TextBlock Text="OK / Completo" FontSize="11" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+                </StackPanel>
+
+                <!-- Falta de Sequência -->
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Border Width="12" Height="12" CornerRadius="3" Background="#EAB308"/>
+                    <TextBlock Text="Volumes Ausentes" FontSize="11" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+                </StackPanel>
+
+                <!-- Nova Pasta -->
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Border Width="12" Height="12" CornerRadius="3" Background="#F97316"/>
+                    <TextBlock Text="Nova Pasta (Vol. 01)" FontSize="11" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+                </StackPanel>
+
+                <!-- Pasta/Vol 01 Ausente -->
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Border Width="12" Height="12" CornerRadius="3" Background="#EF4444"/>
+                    <TextBlock Text="Pasta / Vol. 01 Ausente" FontSize="11" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+                </StackPanel>
+
+                <!-- Copiado -->
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Ellipse Width="10" Height="10" Fill="#22C55E"/>
+                    <TextBlock Text="Copiado" FontSize="11" Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+                </StackPanel>
             </StackPanel>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                <Button Content="Limpar Fila" 
-                        Command="{x:Bind ViewModel.ClearPendingFilesCommand}" />
+            <!-- Ações e Status -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <Button Command="{x:Bind ViewModel.CopyFilesCommand}" 
-                        Style="{ThemeResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE8C8;" FontSize="14"/>
-                        <TextBlock Text="Copiar"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
+                    <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
+                               Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}" />
+                    <ProgressBar Minimum="0" 
+                                 Maximum="{x:Bind ViewModel.CopyTotal, Mode=OneWay}" 
+                                 Value="{x:Bind ViewModel.CopyProgress, Mode=OneWay}" 
+                                 Visibility="{x:Bind ViewModel.IsCopying, Mode=OneWay}" 
+                                 Height="4" 
+                                 HorizontalAlignment="Stretch"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                    <Button Content="Limpar Fila" 
+                            Command="{x:Bind ViewModel.ClearPendingFilesCommand}" />
+
+                    <Button Command="{x:Bind ViewModel.CopyFilesCommand}" 
+                            Style="{ThemeResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8C8;" FontSize="14"/>
+                            <TextBlock Text="Copiar"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

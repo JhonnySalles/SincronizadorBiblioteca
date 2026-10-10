@@ -10,3 +10,10 @@ F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\refint\SyncL
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\SyncLib.Core.pdb
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\ref\SyncLib.Core.dll
 f:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\SyncLib.Core.sourcelink.json
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\bin\Release\net8.0\IpaDic\AUTHORS
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\bin\Release\net8.0\IpaDic\char.bin
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\bin\Release\net8.0\IpaDic\COPYING
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\bin\Release\net8.0\IpaDic\matrix.bin
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\bin\Release\net8.0\IpaDic\sys.dic
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\bin\Release\net8.0\IpaDic\unk.dic
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Core\obj\Release\net8.0\SyncLib.Core.csproj.AssemblyReference.cache

@@ -12,7 +12,7 @@ public class ProcessedFileNameResult
 {
     public string OriginalRawSeries { get; set; } = string.Empty;
     public string SeriesName { get; set; } = string.Empty;
-    public int? VolumeNumber { get; set; }
+    public decimal? VolumeNumber { get; set; }
     public string FormattedFileName { get; set; } = string.Empty;
 }
 
@@ -32,32 +32,33 @@ public static class FileNameProcessor
             .Replace("“", "")
             .Replace("”", "");
 
+        cleaned = Regex.Replace(cleaned, @"--+", " - ");
         cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
-        cleaned = Regex.Replace(cleaned, @"\s*-\s*", " - ").Trim(' ', '-');
+        cleaned = Regex.Replace(cleaned, @"\s+-\s+", " - ").Trim(' ', '-');
         return cleaned;
     }
 
-    public static (string SeriesName, int? VolumeNumber) ExtractSeriesAndVolumeFromFinalFileName(string finalFileName)
+    public static (string SeriesName, decimal? VolumeNumber) ExtractSeriesAndVolumeFromFinalFileName(string finalFileName)
     {
         if (string.IsNullOrWhiteSpace(finalFileName)) return (string.Empty, null);
 
         string nameWithoutExt = Path.GetFileNameWithoutExtension(finalFileName);
 
         // 1. Tenta encontrar pelo último traço antes do volume (ganância garante o último hífen)
-        var matchWithDash = Regex.Match(nameWithoutExt, @"^(?<series>.+)\s*-\s*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        var matchWithDash = Regex.Match(nameWithoutExt, @"^(?<series>.+)\s*-\s*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+(?:\.\d+)?)", RegexOptions.IgnoreCase);
         if (matchWithDash.Success)
         {
             string series = CleanSeriesName(matchWithDash.Groups["series"].Value);
-            int? vol = int.TryParse(matchWithDash.Groups["vol"].Value, out int v) ? v : null;
+            decimal? vol = decimal.TryParse(matchWithDash.Groups["vol"].Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal v) ? v : null;
             return (series, vol);
         }
 
         // 2. Fallback para volume sem traço antes
-        var matchNoDash = Regex.Match(nameWithoutExt, @"^(?<series>.+?)\s+\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        var matchNoDash = Regex.Match(nameWithoutExt, @"^(?<series>.+?)\s+\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+(?:\.\d+)?)", RegexOptions.IgnoreCase);
         if (matchNoDash.Success)
         {
             string series = CleanSeriesName(matchNoDash.Groups["series"].Value);
-            int? vol = int.TryParse(matchNoDash.Groups["vol"].Value, out int v) ? v : null;
+            decimal? vol = decimal.TryParse(matchNoDash.Groups["vol"].Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal v) ? v : null;
             return (series, vol);
         }
 
@@ -71,18 +72,18 @@ public static class FileNameProcessor
         string nameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
 
         // Regex para capturar a série e o número do volume (priorizando o último traço antes de Vol/Volume)
-        var matchWithDash = Regex.Match(nameWithoutExt, @"^(?<series>.+)\s*-\s*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
-        var matchGeneral = Regex.Match(nameWithoutExt, @"^(?<series>.+?)[,\s_]*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", RegexOptions.IgnoreCase);
+        var matchWithDash = Regex.Match(nameWithoutExt, @"^(?<series>.+)\s*-\s*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+(?:\.\d+)?)", RegexOptions.IgnoreCase);
+        var matchGeneral = Regex.Match(nameWithoutExt, @"^(?<series>.+?)[,\s_]*\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+(?:\.\d+)?)", RegexOptions.IgnoreCase);
 
         var match = matchWithDash.Success ? matchWithDash : matchGeneral;
 
         string seriesRaw;
-        int? volumeNumber = null;
+        decimal? volumeNumber = null;
 
         if (match.Success)
         {
             seriesRaw = match.Groups["series"].Value.Trim();
-            if (int.TryParse(match.Groups["vol"].Value, out int v))
+            if (decimal.TryParse(match.Groups["vol"].Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal v))
             {
                 volumeNumber = v;
             }
@@ -122,7 +123,7 @@ public static class FileNameProcessor
         {
             if (volumeNumber.HasValue)
             {
-                string formattedVol = volumeNumber.Value.ToString("D2");
+                string formattedVol = volumeNumber.Value.ToString("00.##", System.Globalization.CultureInfo.InvariantCulture);
                 finalName = $"{cleanedSeries} - Volume {formattedVol}{suffixPart}{extension}";
             }
             else
@@ -140,13 +141,13 @@ public static class FileNameProcessor
         };
     }
 
-    public static string ApplyTemplate(string template, int? volumeNumber, string customSuffixPart, string extension)
+    public static string ApplyTemplate(string template, decimal? volumeNumber, string customSuffixPart, string extension)
     {
         string result = template;
         if (volumeNumber.HasValue)
         {
-            result = result.Replace("{Volume:D2}", volumeNumber.Value.ToString("D2"));
-            result = result.Replace("{Volume}", volumeNumber.Value.ToString());
+            result = result.Replace("{Volume:D2}", volumeNumber.Value.ToString("00.##", System.Globalization.CultureInfo.InvariantCulture));
+            result = result.Replace("{Volume}", volumeNumber.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         }
         result = result.Replace("{LangSuffix}", customSuffixPart);
         result = result.Replace("{Extension}", extension);

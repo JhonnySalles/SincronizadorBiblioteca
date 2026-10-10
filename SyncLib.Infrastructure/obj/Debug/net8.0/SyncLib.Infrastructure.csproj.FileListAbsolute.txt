@@ -34,3 +34,9 @@ D:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\refi
 D:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.pdb
 D:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\SyncLib.Infrastructure.genruntimeconfig.cache
 D:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Debug\net8.0\ref\SyncLib.Infrastructure.dll
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\IpaDic\AUTHORS
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\IpaDic\char.bin
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\IpaDic\COPYING
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\IpaDic\matrix.bin
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\IpaDic\sys.dic
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Debug\net8.0\IpaDic\unk.dic

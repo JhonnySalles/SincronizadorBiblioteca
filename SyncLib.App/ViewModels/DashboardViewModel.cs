@@ -5,7 +5,10 @@ using SyncLib.App.Models;
 using SyncLib.Core.Entities;
 using SyncLib.Core.Enums;
 using SyncLib.Core.Helpers;
+using SyncLib.Core.Services;
+using SyncLib.Core.Services.Storage;
 using SyncLib.Infrastructure.Data;
+using SyncLib.Infrastructure.Services.Storage;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,7 +20,29 @@ namespace SyncLib.App.ViewModels;
 
 public partial class DashboardViewModel : ObservableObject
 {
+    private readonly IStorageProviderFactory _storageFactory = new StorageProviderFactory();
+    private readonly IJapaneseTextNormalizer _japaneseNormalizer = new KawazuJapaneseTextNormalizer();
     private List<DirectoryCache> _inMemoryDirectoryCache = new();
+
+    private ConfigurationPath ToEntity(PathDisplayModel model)
+    {
+        return new ConfigurationPath
+        {
+            Id = model.Id,
+            Path = model.Path,
+            MediaType = model.MediaType,
+            ConnectionType = model.ConnectionType,
+            ServerHost = model.ServerHost,
+            ServerPort = model.ServerPort,
+            Username = model.Username,
+            Password = model.Password,
+            Description = model.Description,
+            CustomSuffix = model.CustomSuffix,
+            CustomFolderSuffix = model.CustomFolderSuffix,
+            AllowedExtensions = model.AllowedExtensions,
+            IncludesSubfolders = model.IncludesSubfolders
+        };
+    }
 
     public ObservableCollection<PathDisplayModel> ConfiguredPaths { get; } = new();
 
@@ -75,6 +100,7 @@ public partial class DashboardViewModel : ObservableObject
     private readonly SyncLib.Core.Services.ApiSyncService _apiSyncService = new();
     private readonly List<NamingPattern> _namingPatterns = new();
     private bool _isSyncingFinalName;
+    private bool _isSyncingTargetDirectory;
 
     public ObservableCollection<FileItemModel> PendingFiles { get; } = new();
 
@@ -86,10 +112,9 @@ public partial class DashboardViewModel : ObservableObject
 
     private void FileItem_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (_isSyncingFinalName) return;
-
         if (e.PropertyName == nameof(FileItemModel.FinalFileName) && sender is FileItemModel changedItem)
         {
+            if (_isSyncingFinalName) return;
             _isSyncingFinalName = true;
             try
             {
@@ -115,6 +140,37 @@ public partial class DashboardViewModel : ObservableObject
         else if ((e.PropertyName == nameof(FileItemModel.DisplayTargetDirectory) || e.PropertyName == nameof(FileItemModel.TargetDirectory)) && sender is FileItemModel changedFolderItem)
         {
             ValidateFolderExistence(changedFolderItem);
+            
+            if (_isSyncingTargetDirectory) return;
+            
+            if (e.PropertyName == nameof(FileItemModel.TargetDirectory) && changedFolderItem.IsCustomTarget)
+            {
+                _isSyncingTargetDirectory = true;
+                try
+                {
+                    var sourceSeries = FileNameProcessor.CleanSeriesName(changedFolderItem.OriginalRawSeries);
+                    foreach (var item in PendingFiles)
+                    {
+                        if (item != changedFolderItem && 
+                            item.DestinationFolder == changedFolderItem.DestinationFolder &&
+                            !item.IsCustomTarget)
+                        {
+                            var itemSeries = FileNameProcessor.CleanSeriesName(item.OriginalRawSeries);
+                            if (string.Equals(itemSeries, sourceSeries, StringComparison.OrdinalIgnoreCase))
+                            {
+                                item.TargetDirectory = changedFolderItem.TargetDirectory;
+                                item.IsCustomTarget = true;
+                                item.RowColor = "Transparent";
+                                item.StatusTooltip = $"Pasta personalizada (replicada): {changedFolderItem.TargetDirectory}";
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    _isSyncingTargetDirectory = false;
+                }
+            }
         }
     }
 
@@ -148,8 +204,8 @@ public partial class DashboardViewModel : ObservableObject
 
         if (item.VolumeNumber.HasValue)
         {
-            string volD2 = item.VolumeNumber.Value.ToString("D2");
-            string volSimple = item.VolumeNumber.Value.ToString();
+            string volD2 = item.VolumeNumber.Value.ToString("00.##", System.Globalization.CultureInfo.InvariantCulture);
+            string volSimple = item.VolumeNumber.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
             if (template.Contains(volD2))
             {
@@ -312,6 +368,15 @@ public partial class DashboardViewModel : ObservableObject
         {
             using var db = new AppDbContext();
             await db.Database.MigrateAsync();
+            await db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS ""DirectoryCaches"" (
+                    ""Id"" TEXT NOT NULL CONSTRAINT ""PK_DirectoryCaches"" PRIMARY KEY,
+                    ""RootPath"" TEXT NOT NULL,
+                    ""SeriesName"" TEXT NOT NULL,
+                    ""FolderPath"" TEXT NOT NULL,
+                    ""MediaType"" TEXT NOT NULL,
+                    ""LastScanned"" TEXT NOT NULL
+                );");
 
             var today = DateTime.Today;
             var existingCaches = await db.DirectoryCaches.ToListAsync();
@@ -326,9 +391,11 @@ public partial class DashboardViewModel : ObservableObject
 
                 if (lastScanned.Date < today)
                 {
-                    if (Directory.Exists(root))
+                    var destEntity = ToEntity(pathConfig);
+                    using var storage = _storageFactory.CreateProvider(destEntity);
+                    if (await storage.DirectoryExistsAsync(root))
                     {
-                        var subdirs = Directory.GetDirectories(root);
+                        var subdirs = await storage.GetDirectoriesAsync(root);
                         var oldEntries = existingCaches
                             .Where(c => c.RootPath.Equals(root, StringComparison.OrdinalIgnoreCase))
                             .ToList();
@@ -338,15 +405,18 @@ public partial class DashboardViewModel : ObservableObject
                         var now = DateTime.Now;
                         foreach (var dir in subdirs)
                         {
-                            var folderName = Path.GetFileName(dir);
-                            db.DirectoryCaches.Add(new DirectoryCache
+                            var folderName = Path.GetFileName(dir.TrimEnd('/', '\\'));
+                            if (!string.IsNullOrEmpty(folderName))
                             {
-                                RootPath = root,
-                                SeriesName = folderName,
-                                FolderPath = dir,
-                                MediaType = pathConfig.MediaType,
-                                LastScanned = now
-                            });
+                                db.DirectoryCaches.Add(new DirectoryCache
+                                {
+                                    RootPath = root,
+                                    SeriesName = folderName,
+                                    FolderPath = dir,
+                                    MediaType = pathConfig.MediaType,
+                                    LastScanned = now
+                                });
+                            }
                         }
 
                         await db.SaveChangesAsync();
@@ -362,7 +432,12 @@ public partial class DashboardViewModel : ObservableObject
         }
     }
 
-    public void AddFiles(IEnumerable<string> filePaths)
+    public async void AddFiles(IEnumerable<string> filePaths)
+    {
+        await AddFilesAsync(filePaths);
+    }
+
+    public async Task AddFilesAsync(IEnumerable<string> filePaths)
     {
         if (!PendingFiles.Any())
         {
@@ -410,11 +485,26 @@ public partial class DashboardViewModel : ObservableObject
             if (Directory.Exists(filePath))
             {
                 var subFiles = Directory.GetFiles(filePath, "*.*", SearchOption.TopDirectoryOnly);
-                ProcessFileBatch(subFiles, targetMediaType, matchingPaths, ref addedCount, ref ignoredCount);
+                await ProcessFileBatchAsync(subFiles, targetMediaType, matchingPaths, addedCountRef => addedCount = addedCountRef, ignoredCountRef => ignoredCount = ignoredCountRef, addedCount, ignoredCount);
             }
             else if (File.Exists(filePath))
             {
-                ProcessFileBatch(new[] { filePath }, targetMediaType, matchingPaths, ref addedCount, ref ignoredCount);
+                await ProcessFileBatchAsync(new[] { filePath }, targetMediaType, matchingPaths, addedCountRef => addedCount = addedCountRef, ignoredCountRef => ignoredCount = ignoredCountRef, addedCount, ignoredCount);
+            }
+        }
+
+        // Reavaliar possíveis falsos vermelhos (quando o Vol 1 entrou depois na fila)
+        foreach (var item in PendingFiles.Where(p => p.RowColor == "#EF4444").ToList())
+        {
+            bool hasVol1InQueue = PendingFiles.Any(p => 
+                p != item && 
+                p.VolumeNumber == 1 && 
+                p.TargetDirectory == item.TargetDirectory);
+
+            if (hasVol1InQueue)
+            {
+                item.RowColor = "#F97316"; 
+                item.StatusTooltip = $"Série nova na fila: Volume {item.VolumeNumber} será copiado para a nova pasta.";
             }
         }
 
@@ -535,8 +625,11 @@ public partial class DashboardViewModel : ObservableObject
         }
     }
 
-    private void ProcessFileBatch(IEnumerable<string> files, MediaType targetMediaType, List<PathDisplayModel> matchingPaths, ref int addedCount, ref int ignoredCount)
+    private async Task ProcessFileBatchAsync(IEnumerable<string> files, MediaType targetMediaType, List<PathDisplayModel> matchingPaths, Action<int> setAdded, Action<int> setIgnored, int currentAdded, int currentIgnored)
     {
+        int addedCount = currentAdded;
+        int ignoredCount = currentIgnored;
+
         foreach (var file in files)
         {
             if (!ExtensionHelper.IsSupportedFile(file, targetMediaType))
@@ -554,9 +647,44 @@ public partial class DashboardViewModel : ObservableObject
                 continue;
             }
 
+            bool isJapanese = _japaneseNormalizer.IsJapanese(fileName);
+            string? japaneseAutoFileName = null;
+            string? japaneseSeriesName = null;
+            decimal? japaneseVolume = null;
+
+            if (isJapanese)
+            {
+                japaneseAutoFileName = await _japaneseNormalizer.NormalizeToRomajiAsync(fileName);
+                var extracted = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(japaneseAutoFileName);
+                japaneseSeriesName = extracted.SeriesName;
+                japaneseVolume = extracted.VolumeNumber;
+            }
+
             foreach (var dest in matchingPaths)
             {
-                var processed = FileNameProcessor.Process(fileName, targetMediaType, _namingPatterns, dest.CustomSuffix);
+                string seriesName;
+                decimal? volumeNumber;
+                string originalRawSeries;
+                string originalAutoFileName;
+                string finalFileName;
+
+                if (isJapanese && japaneseAutoFileName != null)
+                {
+                    seriesName = japaneseSeriesName ?? string.Empty;
+                    volumeNumber = japaneseVolume;
+                    originalRawSeries = Path.GetFileNameWithoutExtension(fileName);
+                    originalAutoFileName = japaneseAutoFileName;
+                    finalFileName = japaneseAutoFileName;
+                }
+                else
+                {
+                    var processed = FileNameProcessor.Process(fileName, targetMediaType, _namingPatterns, dest.CustomSuffix);
+                    seriesName = processed.SeriesName;
+                    volumeNumber = processed.VolumeNumber;
+                    originalRawSeries = processed.OriginalRawSeries;
+                    originalAutoFileName = processed.FormattedFileName;
+                    finalFileName = dest.IncludesSubfolders ? processed.FormattedFileName : fileName;
+                }
 
                 var item = new FileItemModel
                 {
@@ -565,22 +693,114 @@ public partial class DashboardViewModel : ObservableObject
                     DestinationFolder = dest.Path,
                     MediaTypeDisplayName = targetMediaType.ToDisplayName(),
                     IsSubfoldersActive = dest.IncludesSubfolders,
-                    VolumeNumber = processed.VolumeNumber,
-                    OriginalRawSeries = processed.OriginalRawSeries,
-                    OriginalAutoFileName = processed.FormattedFileName,
-                    FinalFileName = dest.IncludesSubfolders ? processed.FormattedFileName : fileName
+                    VolumeNumber = volumeNumber,
+                    OriginalRawSeries = originalRawSeries,
+                    OriginalAutoFileName = originalAutoFileName,
+                    FinalFileName = finalFileName
                 };
 
-                EvaluateDestinationForItem(item, processed.SeriesName, processed.VolumeNumber, dest, targetMediaType);
+                EvaluateDestinationForItem(item, seriesName, volumeNumber, dest, targetMediaType);
 
                 AttachItemEvents(item);
                 PendingFiles.Add(item);
                 addedCount++;
             }
         }
+
+        setAdded(addedCount);
+        setIgnored(ignoredCount);
     }
 
-    private void EvaluateDestinationForItem(FileItemModel item, string seriesName, int? volumeNumber, PathDisplayModel? destConfig, MediaType targetMediaType)
+    private HashSet<decimal> GetExistingVolumesForSeries(string targetDirectory, string seriesName, bool isSubfolders, FileItemModel? currentItem = null)
+    {
+        var volumes = new HashSet<decimal>();
+        string normSeries = NormalizeForComparison(seriesName);
+
+        if (Directory.Exists(targetDirectory))
+        {
+            try
+            {
+                var files = Directory.GetFiles(targetDirectory);
+                foreach (var f in files)
+                {
+                    var fileName = Path.GetFileName(f);
+                    var (extractedSeries, extractedVol) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(fileName);
+                    
+                    if (extractedVol.HasValue)
+                    {
+                        if (isSubfolders)
+                        {
+                            volumes.Add(extractedVol.Value);
+                        }
+                        else
+                        {
+                            string normExtracted = NormalizeForComparison(extractedSeries);
+                            if (normExtracted == normSeries || normExtracted.StartsWith(normSeries) || normSeries.StartsWith(normExtracted))
+                            {
+                                volumes.Add(extractedVol.Value);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        foreach (var pending in PendingFiles)
+        {
+            if (pending != currentItem &&
+                pending.VolumeNumber.HasValue &&
+                string.Equals(pending.TargetDirectory, targetDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                if (isSubfolders)
+                {
+                    volumes.Add(pending.VolumeNumber.Value);
+                }
+                else
+                {
+                    string normPendingSeries = NormalizeForComparison(pending.OriginalRawSeries);
+                    if (normPendingSeries == normSeries || normPendingSeries.StartsWith(normSeries) || normSeries.StartsWith(normPendingSeries))
+                    {
+                        volumes.Add(pending.VolumeNumber.Value);
+                    }
+                }
+            }
+        }
+
+        return volumes;
+    }
+
+    private string? FindVolume01FileName(string folderPath, string seriesName)
+    {
+        if (Directory.Exists(folderPath))
+        {
+            try
+            {
+                var files = Directory.GetFiles(folderPath);
+                // 1. Prioridade: busca arquivo que corresponde ao Volume 1
+                foreach (var f in files)
+                {
+                    var fileName = Path.GetFileName(f);
+                    var (_, extractedVol) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(fileName);
+                    if (extractedVol == 1)
+                    {
+                        return fileName;
+                    }
+                }
+
+                // 2. Caso não tenha vol 1 explícito, pega o primeiro arquivo válido de mídia na pasta
+                var firstSupported = files.FirstOrDefault(f => !f.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) && !Path.GetFileName(f).StartsWith("."));
+                if (firstSupported != null)
+                {
+                    return Path.GetFileName(firstSupported);
+                }
+            }
+            catch { }
+        }
+        return null;
+    }
+
+    private void EvaluateDestinationForItem(FileItemModel item, string seriesName, decimal? volumeNumber, PathDisplayModel? destConfig, MediaType targetMediaType)
     {
         bool isSubfolders = destConfig != null ? destConfig.IncludesSubfolders : item.IsSubfoldersActive;
         string destPath = destConfig != null ? destConfig.Path : item.DestinationFolder;
@@ -593,41 +813,79 @@ public partial class DashboardViewModel : ObservableObject
         if (!isSubfolders)
         {
             item.TargetDirectory = destPath;
-            item.RowColor = "Transparent";
-            item.StatusTooltip = "Cópia direta para a pasta de destino.";
-            return;
-        }
-
-        var matchedCache = FindMatchingDirectoryCache(destPath, seriesName, targetMediaType, customFolderSuffix);
-
-        if (matchedCache != null && Directory.Exists(matchedCache.FolderPath))
-        {
-            item.SeriesFolderName = matchedCache.SeriesName;
-            item.TargetDirectory = matchedCache.FolderPath;
+            item.SeriesFolderName = string.Empty;
 
             if (volumeNumber.HasValue && volumeNumber.Value > 1)
             {
-                int maxVol = GetMaxVolumeInFolderAndQueue(matchedCache.FolderPath, seriesName, item);
-                if (maxVol > 0 && volumeNumber.Value > maxVol + 1)
+                var existingVolumes = GetExistingVolumesForSeries(destPath, seriesName, isSubfolders: false, item);
+                var missingVolumes = new List<int>();
+                for (int i = 1; i < volumeNumber.Value; i++)
                 {
-                    item.RowColor = "#FFF97316"; // Amarelo
-                    item.StatusTooltip = $"Atenção: Pulo de volume! Último volume detectado é o {maxVol}, adicionando {volumeNumber.Value}.";
+                    if (!existingVolumes.Contains(i))
+                    {
+                        missingVolumes.Add(i);
+                    }
                 }
-                else if (maxVol == 0)
+
+                if (missingVolumes.Any())
                 {
-                    item.RowColor = "#FFF97316"; // Amarelo
-                    item.StatusTooltip = $"Atenção: Pasta vazia! Adicionando Volume {volumeNumber.Value} sem os anteriores.";
+                    item.RowColor = "#EAB308"; // Amarelo (Falta de sequência)
+                    item.StatusTooltip = $"Atenção: Volumes anteriores ausentes na biblioteca: {string.Join(", ", missingVolumes.Select(v => $"Vol. {v:D2}"))}.";
                 }
                 else
                 {
                     item.RowColor = "Transparent";
-                    item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
+                    item.StatusTooltip = "OK: Arquivo pronto para cópia na raiz.";
                 }
             }
             else
             {
                 item.RowColor = "Transparent";
-                item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}).";
+                item.StatusTooltip = "OK: Arquivo pronto para cópia na raiz.";
+            }
+            return;
+        }
+
+        var matchedCache = FindMatchingDirectoryCache(destPath, seriesName, targetMediaType, customFolderSuffix);
+        bool folderExists = destConfig?.ConnectionType == StorageConnectionType.Ftp 
+            ? matchedCache != null 
+            : (matchedCache != null && Directory.Exists(matchedCache.FolderPath));
+
+        if (matchedCache != null && folderExists)
+        {
+            item.SeriesFolderName = matchedCache.SeriesName;
+            item.TargetDirectory = matchedCache.FolderPath;
+
+            var vol1FileName = FindVolume01FileName(matchedCache.FolderPath, seriesName);
+            string vol1Info = !string.IsNullOrEmpty(vol1FileName) ? $" - {vol1FileName}" : string.Empty;
+
+            if (volumeNumber.HasValue && volumeNumber.Value > 1)
+            {
+                var existingVolumes = GetExistingVolumesForSeries(matchedCache.FolderPath, seriesName, isSubfolders: true, item);
+                var missingVolumes = new List<int>();
+                for (int i = 1; i < volumeNumber.Value; i++)
+                {
+                    if (!existingVolumes.Contains(i))
+                    {
+                        missingVolumes.Add(i);
+                    }
+                }
+
+                if (missingVolumes.Any())
+                {
+                    item.RowColor = "#EAB308"; // Amarelo (Falta de sequência)
+                    item.StatusTooltip = $"Atenção: Volumes anteriores ausentes: {string.Join(", ", missingVolumes.Select(v => $"Vol. {v:D2}"))}.";
+                }
+                else
+                {
+                    item.RowColor = "Transparent";
+                    item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}){vol1Info}";
+                }
+            }
+            else
+            {
+                item.RowColor = "Transparent";
+                item.StatusTooltip = $"OK: Pasta localizada ({matchedCache.SeriesName}){vol1Info}";
             }
         }
         else
@@ -638,7 +896,7 @@ public partial class DashboardViewModel : ObservableObject
 
             string folderSuffix = !string.IsNullOrWhiteSpace(customFolderSuffix)
                 ? (customFolderSuffix.StartsWith(" ") ? customFolderSuffix : $" {customFolderSuffix.Trim()}")
-                : (isEbook && !seriesName.EndsWith("(Novel)", StringComparison.OrdinalIgnoreCase) ? " (Novel)" : string.Empty);
+                : string.Empty;
 
             string cleanSeries = FileNameProcessor.CleanSeriesName(seriesName);
             string baseSeriesName = cleanSeries;
@@ -648,18 +906,33 @@ public partial class DashboardViewModel : ObservableObject
             }
 
             item.SeriesFolderName = baseSeriesName;
-            var proposedFolder = Path.Combine(destPath, baseSeriesName);
+            var proposedFolder = destConfig?.ConnectionType == StorageConnectionType.Ftp
+                ? $"{destPath.TrimEnd('/')}/{baseSeriesName}"
+                : Path.Combine(destPath, baseSeriesName);
             item.TargetDirectory = proposedFolder;
 
             if (volumeNumber == 1)
             {
-                item.RowColor = "#FFF97316"; // Laranja
-                item.StatusTooltip = $"Pasta da série não existe no destino. Será criada ao copiar: {proposedFolder}";
+                item.RowColor = "#F97316"; // Laranja (Nova pasta)
+                item.StatusTooltip = $"Nova série: Pasta '{baseSeriesName}' será criada no destino.";
             }
             else
             {
-                item.RowColor = "#EF4444"; // Vermelho
-                item.StatusTooltip = $"Atenção: Pasta da série não encontrada no destino para Volume {volumeNumber}!";
+                bool hasVol1InQueue = PendingFiles.Any(p => 
+                    p != item && 
+                    p.VolumeNumber == 1 && 
+                    p.TargetDirectory == proposedFolder);
+
+                if (hasVol1InQueue)
+                {
+                    item.RowColor = "#F97316"; // Laranja (Nova pasta na fila)
+                    item.StatusTooltip = $"Série nova na fila: Volume {volumeNumber} será copiado para a nova pasta.";
+                }
+                else
+                {
+                    item.RowColor = "#EF4444"; // Vermelho (Pasta ou Vol 01 não encontrado)
+                    item.StatusTooltip = $"Atenção: Pasta da série ou Volume 01 não encontrado no destino para o Volume {volumeNumber}!";
+                }
             }
         }
     }
@@ -703,9 +976,9 @@ public partial class DashboardViewModel : ObservableObject
         StatusMessage = $"Destino reanalisado para '{item.FileName}' ({count} destino(s)).";
     }
 
-    private int GetMaxVolumeInFolderAndQueue(string folderPath, string seriesName, FileItemModel? currentItem = null)
+    private decimal GetMaxVolumeInFolderAndQueue(string folderPath, string seriesName, FileItemModel? currentItem = null)
     {
-        int maxVol = 0;
+        decimal maxVol = 0;
 
         if (Directory.Exists(folderPath))
         {
@@ -715,8 +988,8 @@ public partial class DashboardViewModel : ObservableObject
                 foreach (var f in files)
                 {
                     var filename = Path.GetFileName(f);
-                    var volMatch = System.Text.RegularExpressions.Regex.Match(filename, @"\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    if (volMatch.Success && int.TryParse(volMatch.Groups["vol"].Value, out int v))
+                    var volMatch = System.Text.RegularExpressions.Regex.Match(filename, @"\b[Vv]ol(?:ume)?\.?\s*(?<vol>\d+(?:\.\d+)?)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    if (volMatch.Success && decimal.TryParse(volMatch.Groups["vol"].Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal v))
                     {
                         if (v > maxVol) maxVol = v;
                     }
@@ -751,6 +1024,38 @@ public partial class DashboardViewModel : ObservableObject
         else if (cleaned.EndsWith("[Novel]", StringComparison.OrdinalIgnoreCase))
             cleaned = cleaned.Substring(0, cleaned.Length - "[Novel]".Length).Trim();
         return cleaned;
+    }
+
+    private bool DirectoryContainsVolume01OrSeriesFiles(string dirPath, string seriesName)
+    {
+        if (!Directory.Exists(dirPath)) return false;
+
+        try
+        {
+            var files = Directory.GetFiles(dirPath);
+            string normSeries = NormalizeForComparison(seriesName);
+
+            foreach (var file in files)
+            {
+                var (extractedSeries, extractedVol) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(Path.GetFileName(file));
+                string normExtracted = NormalizeForComparison(extractedSeries);
+
+                if (!string.IsNullOrEmpty(normExtracted))
+                {
+                    bool isSeriesMatch = normExtracted == normSeries ||
+                                         normExtracted.StartsWith(normSeries, StringComparison.OrdinalIgnoreCase) ||
+                                         normSeries.StartsWith(normExtracted, StringComparison.OrdinalIgnoreCase);
+
+                    if (isSeriesMatch && (extractedVol == 1 || normExtracted == normSeries))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return false;
     }
 
     private bool IsDirectoryMatch(string folderName, string seriesName, string? customFolderSuffix, MediaType targetMediaType)
@@ -804,7 +1109,8 @@ public partial class DashboardViewModel : ObservableObject
         var match = _inMemoryDirectoryCache.FirstOrDefault(c =>
             c.RootPath.Equals(rootPath, StringComparison.OrdinalIgnoreCase) &&
             c.MediaType == targetMediaType &&
-            IsDirectoryMatch(c.SeriesName, seriesName, customFolderSuffix, targetMediaType));
+            (IsDirectoryMatch(c.SeriesName, seriesName, customFolderSuffix, targetMediaType) ||
+             (Directory.Exists(c.FolderPath) && DirectoryContainsVolume01OrSeriesFiles(c.FolderPath, seriesName))));
 
         // 2. Fallback de Disco na pasta raiz desta biblioteca específica
         if (match == null && Directory.Exists(rootPath))
@@ -812,6 +1118,28 @@ public partial class DashboardViewModel : ObservableObject
             try
             {
                 var subdirs = Directory.GetDirectories(rootPath);
+                
+                // Prioridade 2.1: Pastas que contenham o Volume 01 ou arquivos da série
+                foreach (var dir in subdirs)
+                {
+                    var folderName = Path.GetFileName(dir);
+                    if (DirectoryContainsVolume01OrSeriesFiles(dir, seriesName))
+                    {
+                        match = new DirectoryCache
+                        {
+                            RootPath = rootPath,
+                            SeriesName = folderName,
+                            FolderPath = dir,
+                            MediaType = targetMediaType,
+                            LastScanned = DateTime.Now
+                        };
+                        _inMemoryDirectoryCache.Add(match);
+                        _ = SaveDirectoryCacheToDbAsync(folderName, dir, rootPath, targetMediaType);
+                        return match;
+                    }
+                }
+
+                // Prioridade 2.2: Correspondência por nome da pasta
                 foreach (var dir in subdirs)
                 {
                     var folderName = Path.GetFileName(dir);
@@ -971,18 +1299,62 @@ public partial class DashboardViewModel : ObservableObject
 
         int copiedCount = 0;
         int errorCount = 0;
-        var completedItems = new List<FileItemModel>();
         var itemsToCopy = PendingFiles.ToList();
 
-        foreach (var item in itemsToCopy)
+        // 1. Renomear arquivos de origem
+        var itemsBySource = itemsToCopy.GroupBy(i => i.FilePath).ToList();
+        foreach (var group in itemsBySource)
+        {
+            var firstItem = group.First();
+            string oldPath = firstItem.FilePath;
+            string dir = Path.GetDirectoryName(oldPath) ?? string.Empty;
+            string newPath = Path.Combine(dir, firstItem.FinalFileName);
+
+            if (!string.Equals(oldPath, newPath, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (File.Exists(newPath))
+                    {
+                        throw new IOException("Já existe um arquivo com o novo nome na pasta de origem.");
+                    }
+                    File.Move(oldPath, newPath);
+                    foreach (var item in group)
+                    {
+                        item.FilePath = newPath;
+                        item.FileName = firstItem.FinalFileName;
+                        // Atualiza na grid
+                    }
+                }
+                catch (Exception ex)
+                {
+                    foreach (var item in group)
+                    {
+                        item.RowColor = "#EF4444";
+                        item.StatusTooltip = $"Erro ao renomear origem: {ex.Message}";
+                    }
+                    errorCount += group.Count();
+                }
+            }
+        }
+
+        // 2. Copiar
+        var validItemsToCopy = itemsToCopy.Where(i => i.RowColor != "#EF4444").ToList();
+        foreach (var item in validItemsToCopy)
         {
             try
             {
                 StatusMessage = $"Copiando: {item.FinalFileName}... ({copiedCount + 1}/{(int)CopyTotal})";
 
-                if (!Directory.Exists(item.TargetDirectory))
+                var destConfig = ConfiguredPaths.FirstOrDefault(p => p.Path.Equals(item.DestinationFolder, StringComparison.OrdinalIgnoreCase));
+                var destEntity = destConfig != null ? ToEntity(destConfig) : new ConfigurationPath { Path = item.DestinationFolder };
+
+                using var localProvider = new LocalStorageProvider();
+                using var destStorage = _storageFactory.CreateProvider(destEntity);
+
+                if (!await destStorage.DirectoryExistsAsync(item.TargetDirectory))
                 {
-                    Directory.CreateDirectory(item.TargetDirectory);
+                    await destStorage.CreateDirectoryAsync(item.TargetDirectory);
 
                     var parentDir = Path.GetDirectoryName(item.TargetDirectory);
                     var folderName = Path.GetFileName(item.TargetDirectory);
@@ -999,8 +1371,16 @@ public partial class DashboardViewModel : ObservableObject
                     }
                 }
 
-                var destFilePath = Path.Combine(item.TargetDirectory, item.FinalFileName);
-                await Task.Run(() => File.Copy(item.FilePath, destFilePath, overwrite: true));
+                var destFilePath = destEntity.ConnectionType == StorageConnectionType.Ftp
+                    ? $"{item.TargetDirectory.TrimEnd('/')}/{item.FinalFileName}"
+                    : Path.Combine(item.TargetDirectory, item.FinalFileName);
+
+                if (await destStorage.FileExistsAsync(destFilePath))
+                {
+                    throw new IOException("O arquivo de destino já existe (sobrescrita bloqueada).");
+                }
+
+                await _storageFactory.TransferFileAsync(localProvider, item.FilePath, destStorage, destFilePath, overwrite: false);
 
                 // Registra no log de cópia para rastreabilidade
                 CopyLogger.LogCopy(item.FilePath, item.MediaTypeDisplayName, item.FinalFileName, item.TargetDirectory);

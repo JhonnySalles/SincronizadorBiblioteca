@@ -1,8 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using SyncLib.Core.Entities;
 using SyncLib.Core.Enums;
+using SyncLib.Infrastructure.Services.Storage;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SyncLib.App.Models;
 
@@ -25,6 +27,29 @@ public partial class PathDisplayModel : ObservableObject
     private MediaType _mediaType;
 
     public string MediaTypeDisplayName => MediaType.ToDisplayName();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ConnectionTypeDisplayName))]
+    [NotifyPropertyChangedFor(nameof(IsFtp))]
+    [NotifyPropertyChangedFor(nameof(IsNetworkOrFtp))]
+    private StorageConnectionType _connectionType = StorageConnectionType.Local;
+
+    public string ConnectionTypeDisplayName => ConnectionType.ToDisplayName();
+
+    public bool IsFtp => ConnectionType == StorageConnectionType.Ftp;
+    public bool IsNetworkOrFtp => ConnectionType != StorageConnectionType.Local;
+
+    [ObservableProperty]
+    private string _serverHost = string.Empty;
+
+    [ObservableProperty]
+    private int _serverPort = 21;
+
+    [ObservableProperty]
+    private string _username = string.Empty;
+
+    [ObservableProperty]
+    private string _password = string.Empty;
 
     [ObservableProperty]
     private string _description = string.Empty;
@@ -58,6 +83,11 @@ public partial class PathDisplayModel : ObservableObject
         Id = entity.Id;
         _path = entity.Path;
         _mediaType = entity.MediaType;
+        _connectionType = entity.ConnectionType;
+        _serverHost = entity.ServerHost;
+        _serverPort = entity.ServerPort > 0 ? entity.ServerPort : 21;
+        _username = entity.Username;
+        _password = entity.Password;
         _description = entity.Description;
         _customSuffix = entity.CustomSuffix;
         _customFolderSuffix = entity.CustomFolderSuffix;
@@ -73,6 +103,47 @@ public partial class PathDisplayModel : ObservableObject
 
     public void CheckStatus()
     {
-        ExistsOnDisk = !string.IsNullOrWhiteSpace(Path) && Directory.Exists(Path);
+        if (ConnectionType == StorageConnectionType.Local || ConnectionType == StorageConnectionType.Network)
+        {
+            ExistsOnDisk = !string.IsNullOrWhiteSpace(Path) && Directory.Exists(Path);
+        }
+        else if (ConnectionType == StorageConnectionType.Ftp)
+        {
+            ExistsOnDisk = !string.IsNullOrWhiteSpace(ServerHost);
+        }
+    }
+
+    public async Task CheckStatusAsync()
+    {
+        if (ConnectionType == StorageConnectionType.Local || ConnectionType == StorageConnectionType.Network)
+        {
+            ExistsOnDisk = !string.IsNullOrWhiteSpace(Path) && Directory.Exists(Path);
+        }
+        else if (ConnectionType == StorageConnectionType.Ftp)
+        {
+            if (string.IsNullOrWhiteSpace(ServerHost))
+            {
+                ExistsOnDisk = false;
+                return;
+            }
+
+            try
+            {
+                using var ftp = new FtpStorageProvider(ServerHost, ServerPort, Username, Password);
+                var connected = await ftp.TestConnectionAsync();
+                if (connected && !string.IsNullOrWhiteSpace(Path))
+                {
+                    ExistsOnDisk = await ftp.DirectoryExistsAsync(Path);
+                }
+                else
+                {
+                    ExistsOnDisk = connected;
+                }
+            }
+            catch
+            {
+                ExistsOnDisk = false;
+            }
+        }
     }
 }

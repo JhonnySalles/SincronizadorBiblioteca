@@ -42,7 +42,7 @@ public class FileNameProcessorTests
     [InlineData("Naruto - Vol 05.cbz", "Naruto", 5)]
     [InlineData("Bleach - Volume 10.zip", "Bleach", 10)]
     [InlineData("Chainsaw Man - Vol. 12.epub", "Chainsaw Man", 12)]
-    public void ExtractSeriesAndVolumeFromFinalFileName_ShouldExtractCorrectSeriesAndVolume(string fileName, string expectedSeries, int expectedVolume)
+    public void ExtractSeriesAndVolumeFromFinalFileName_ShouldExtractCorrectSeriesAndVolume(string fileName, string expectedSeries, decimal expectedVolume)
     {
         var (series, volume) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(fileName);
         
@@ -55,7 +55,7 @@ public class FileNameProcessorTests
     [InlineData("Berserk - 03.cbz", "Berserk - 03", null)]
     [InlineData("Artbook Special Edition.pdf", "Artbook Special Edition", null)]
     [InlineData("Solo Leveling Side Story.zip", "Solo Leveling Side Story", null)]
-    public void ExtractSeriesAndVolumeFromFinalFileName_ShouldReturnNullVolume_WhenNoVolumeInName(string fileName, string expectedSeries, int? expectedVolume)
+    public void ExtractSeriesAndVolumeFromFinalFileName_ShouldReturnNullVolume_WhenNoVolumeInName(string fileName, string expectedSeries, decimal? expectedVolume)
     {
         var (series, volume) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(fileName);
         
@@ -173,5 +173,18 @@ public class FileNameProcessorTests
         result.Should().Be(expected);
     }
 
+    [Theory]
+    [InlineData("86--EIGHTY-SIX - Volume 01 (Eng).epub", "86 - EIGHTY-SIX", 1)]
+    [InlineData("Fate Zero - Volume 01 (Jap).epub", "Fate Zero", 1)]
+    [InlineData("1 Nen A Gumi no Monster - Volume 01 (Sem capa).cbr", "1 Nen A Gumi no Monster", 1)]
+    [InlineData("2.5 Jigen no Ririsa - Volume 05 (Sem capa).cbr", "2.5 Jigen no Ririsa", 5)]
+    public void ExtractSeriesAndVolumeFromFinalFileName_ShouldHandleRealLibraryExamples(string fileName, string expectedSeries, decimal expectedVolume)
+    {
+        var (series, volume) = FileNameProcessor.ExtractSeriesAndVolumeFromFinalFileName(fileName);
+        series.Should().Be(expectedSeries);
+        volume.Should().Be(expectedVolume);
+    }
+
     #endregion
 }
+

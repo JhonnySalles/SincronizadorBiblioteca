@@ -121,4 +121,46 @@ public class AppDbContextTests
     }
 
     #endregion
+
+    #region Migration Tests
+
+    [Fact]
+    public async Task Sqlite_Migrations_CreateDirectoryCachesTableSuccessfully()
+    {
+        var tempDb = Path.Combine(Path.GetTempPath(), $"synclib_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={tempDb}")
+                .Options;
+
+            using (var context = new AppDbContext(options))
+            {
+                await context.Database.MigrateAsync();
+
+                context.DirectoryCaches.Add(new DirectoryCache
+                {
+                    RootPath = "C:\\Root",
+                    SeriesName = "Bleach",
+                    FolderPath = "C:\\Root\\Bleach",
+                    MediaType = MediaType.MangaPortugues,
+                    LastScanned = DateTime.Now
+                });
+                await context.SaveChangesAsync();
+
+                var list = await context.DirectoryCaches.ToListAsync();
+                list.Should().HaveCount(1);
+                list[0].SeriesName.Should().Be("Bleach");
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempDb))
+            {
+                try { File.Delete(tempDb); } catch { }
+            }
+        }
+    }
+
+    #endregion
 }

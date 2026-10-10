@@ -16,3 +16,9 @@ F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\Sy
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\SyncLib.Infrastructure.genruntimeconfig.cache
 F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\ref\SyncLib.Infrastructure.dll
 f:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\obj\Release\net8.0\SyncLib.Infrastructure.sourcelink.json
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Release\net8.0\IpaDic\AUTHORS
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Release\net8.0\IpaDic\char.bin
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Release\net8.0\IpaDic\COPYING
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Release\net8.0\IpaDic\matrix.bin
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Release\net8.0\IpaDic\sys.dic
+F:\Projetos\SincronizadorBiblioteca\SyncLib.Infrastructure\bin\Release\net8.0\IpaDic\unk.dic
