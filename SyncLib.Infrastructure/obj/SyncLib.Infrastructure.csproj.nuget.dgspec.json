@@ -5,7 +5,7 @@
   },
   "projects": {
     "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "restore": {
         "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Core\\SyncLib.Core.csproj",
         "projectName": "SyncLib.Core",
@@ -97,7 +97,7 @@
       }
     },
     "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "restore": {
         "projectUniqueName": "F:\\Projetos\\SincronizadorBiblioteca\\SyncLib.Infrastructure\\SyncLib.Infrastructure.csproj",
         "projectName": "SyncLib.Infrastructure",

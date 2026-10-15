@@ -5,7 +5,7 @@
     <Platform>x64</Platform>
     <PlatformTarget>x64</PlatformTarget>
     <Cultures>pt-BR;en-US</Cultures>
-    <SuppressIces>ICE03</SuppressIces>
+    <SuppressIces>ICE03;ICE61</SuppressIces>
   </PropertyGroup>
 
   <ItemGroup>

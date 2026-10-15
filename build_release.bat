@@ -12,6 +12,9 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
+if exist "Executavel\Executavel.rar" del /f /q "Executavel\Executavel.rar" > nul 2>&1
+if exist "Executavel\error_log.txt" del /f /q "Executavel\error_log.txt" > nul 2>&1
+
 echo.
 echo =========================================
 echo Gerando Instalador MSI com WiX Toolset v4...

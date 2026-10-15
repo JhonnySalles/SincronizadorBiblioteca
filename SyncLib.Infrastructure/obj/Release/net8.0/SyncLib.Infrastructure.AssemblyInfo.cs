@@ -12,11 +12,11 @@ using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("SyncLib.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bcd44ef95a46fb00a74b8404e95edbbfccccf167")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.1.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.1+a3829e862f944604df640918684fe1629dd1c633")]
 [assembly: System.Reflection.AssemblyProductAttribute("SyncLib.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SyncLib.Infrastructure")]
-[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyVersionAttribute("1.0.1.0")]
 
 // Gerado pela classe WriteCodeFragment do MSBuild.
 

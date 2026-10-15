@@ -41,7 +41,12 @@ public partial class App : Application
     {
         try
         {
-            var logPath = System.IO.Path.Combine(AppContext.BaseDirectory, "error_log.txt");
+            var folder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SyncLib");
+            if (!System.IO.Directory.Exists(folder))
+            {
+                System.IO.Directory.CreateDirectory(folder);
+            }
+            var logPath = System.IO.Path.Combine(folder, "error_log.txt");
             var content = $"[{DateTime.Now}] [{source}]\n{ex}\n{new string('-', 50)}\n";
             System.IO.File.AppendAllText(logPath, content);
         }
